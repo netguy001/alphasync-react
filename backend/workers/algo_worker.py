@@ -94,11 +94,13 @@ class AlgoStrategyWorker:
                             exc_info=True,
                         )
                         # Log the error
-                        db.add(AlgoLog(
-                            strategy_id=strategy.id,
-                            action="ERROR",
-                            details=str(e)[:500],
-                        ))
+                        db.add(
+                            AlgoLog(
+                                strategy_id=strategy.id,
+                                level="ERROR",
+                                message=str(e)[:500],
+                            )
+                        )
 
                 await db.commit()
 
@@ -117,11 +119,13 @@ class AlgoStrategyWorker:
         )
 
         if not candles or len(candles) < 30:
-            db.add(AlgoLog(
-                strategy_id=strategy.id,
-                action="SKIP",
-                details=f"Insufficient historical data ({len(candles) if candles else 0} candles)",
-            ))
+            db.add(
+                AlgoLog(
+                    strategy_id=strategy.id,
+                    level="WARNING",
+                    message=f"Insufficient historical data ({len(candles) if candles else 0} candles)",
+                )
+            )
             return
 
         closes = [c["close"] for c in candles if "close" in c]
@@ -130,7 +134,9 @@ class AlgoStrategyWorker:
         volumes = [c.get("volume", 0) for c in candles]
 
         # ── Step 2 & 3: Compute indicators + generate signal ──────
-        parameters = strategy.parameters if isinstance(strategy.parameters, dict) else {}
+        parameters = (
+            strategy.parameters if isinstance(strategy.parameters, dict) else {}
+        )
         signal = signal_generator.evaluate(
             strategy_type=strategy.strategy_type,
             closes=closes,
@@ -143,11 +149,14 @@ class AlgoStrategyWorker:
         self._stats["signals"] += 1
 
         # Log every signal (even HOLD for audit trail)
-        db.add(AlgoLog(
-            strategy_id=strategy.id,
-            action=signal.action,
-            details=signal.reason,
-        ))
+        db.add(
+            AlgoLog(
+                strategy_id=strategy.id,
+                level="TRADE" if signal.action != "HOLD" else "INFO",
+                message=f"[{signal.action}] {signal.reason}",
+                data=signal.indicator_values,
+            )
+        )
 
         if signal.action == "HOLD":
             return
@@ -173,21 +182,29 @@ class AlgoStrategyWorker:
         )
 
         if not risk_result.passed:
-            db.add(AlgoLog(
-                strategy_id=strategy.id,
-                action="RISK_REJECTED",
-                details=f"Signal {signal.action} rejected: {risk_result.reason}",
-            ))
+            db.add(
+                AlgoLog(
+                    strategy_id=strategy.id,
+                    level="WARNING",
+                    message=f"Risk rejected {signal.action}: {risk_result.reason}",
+                    data={
+                        "check": risk_result.check_name,
+                        "details": risk_result.details,
+                    },
+                )
+            )
 
-            await event_bus.emit(Event(
-                type=EventType.ALGO_ERROR,
-                data={
-                    "strategy_id": str(strategy.id),
-                    "reason": risk_result.reason,
-                },
-                user_id=str(strategy.user_id),
-                source="algo_worker",
-            ))
+            await event_bus.emit(
+                Event(
+                    type=EventType.ALGO_ERROR,
+                    data={
+                        "strategy_id": str(strategy.id),
+                        "reason": risk_result.reason,
+                    },
+                    user_id=str(strategy.user_id),
+                    source="algo_worker",
+                )
+            )
             return
 
         # ── Step 5: Place the order ───────────────────────────────
@@ -205,53 +222,64 @@ class AlgoStrategyWorker:
                 self._stats["trades"] += 1
 
                 # Record algo trade
-                db.add(AlgoTrade(
-                    strategy_id=strategy.id,
-                    symbol=strategy.symbol,
-                    side=signal.action,
-                    quantity=quantity,
-                    price=current_price,
-                    status="FILLED",
-                ))
+                db.add(
+                    AlgoTrade(
+                        strategy_id=strategy.id,
+                        user_id=str(strategy.user_id),
+                        symbol=strategy.symbol,
+                        side=signal.action,
+                        quantity=quantity,
+                        price=current_price,
+                        signal=signal.reason[:50] if signal.reason else None,
+                    )
+                )
 
                 # Update strategy stats
                 strategy.total_trades = (strategy.total_trades or 0) + 1
 
-                db.add(AlgoLog(
-                    strategy_id=strategy.id,
-                    action="TRADE_EXECUTED",
-                    details=(
-                        f"{signal.action} {quantity}x {strategy.symbol} "
-                        f"@ ₹{current_price:.2f} | Reason: {signal.reason}"
-                    ),
-                ))
+                db.add(
+                    AlgoLog(
+                        strategy_id=strategy.id,
+                        level="TRADE",
+                        message=(
+                            f"{signal.action} {quantity}x {strategy.symbol} "
+                            f"@ ₹{current_price:.2f} | Reason: {signal.reason}"
+                        ),
+                    )
+                )
 
-                await event_bus.emit(Event(
-                    type=EventType.ALGO_TRADE,
-                    data={
-                        "strategy_id": str(strategy.id),
-                        "symbol": strategy.symbol,
-                        "side": signal.action,
-                        "quantity": quantity,
-                        "price": current_price,
-                        "reason": signal.reason,
-                    },
-                    user_id=str(strategy.user_id),
-                    source="algo_worker",
-                ))
+                await event_bus.emit(
+                    Event(
+                        type=EventType.ALGO_TRADE,
+                        data={
+                            "strategy_id": str(strategy.id),
+                            "symbol": strategy.symbol,
+                            "side": signal.action,
+                            "quantity": quantity,
+                            "price": current_price,
+                            "reason": signal.reason,
+                        },
+                        user_id=str(strategy.user_id),
+                        source="algo_worker",
+                    )
+                )
             else:
-                db.add(AlgoLog(
-                    strategy_id=strategy.id,
-                    action="TRADE_FAILED",
-                    details=f"Order placement failed: {order_result.get('error', 'Unknown error')}",
-                ))
+                db.add(
+                    AlgoLog(
+                        strategy_id=strategy.id,
+                        level="ERROR",
+                        message=f"Order placement failed: {order_result.get('error', 'Unknown error')}",
+                    )
+                )
 
         except Exception as e:
-            db.add(AlgoLog(
-                strategy_id=strategy.id,
-                action="TRADE_ERROR",
-                details=f"Order placement error: {str(e)[:200]}",
-            ))
+            db.add(
+                AlgoLog(
+                    strategy_id=strategy.id,
+                    level="ERROR",
+                    message=f"Order placement error: {str(e)[:200]}",
+                )
+            )
             raise
 
     async def stop(self) -> None:

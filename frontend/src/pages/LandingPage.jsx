@@ -15,10 +15,10 @@ export default function LandingPage() {
     return (
         <div className="min-h-screen bg-surface-950 overflow-hidden">
             {/* Nav */}
-            <nav className="flex items-center justify-between px-6 lg:px-12 h-16 border-b border-white/5 bg-surface-950/80 backdrop-blur-xl sticky top-0 z-50">
+            <nav className="flex items-center justify-between px-6 lg:px-12 h-16 border-b border-edge/5 bg-surface-950/80 backdrop-blur-xl sticky top-0 z-50">
                 <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary-500 to-accent-cyan flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-primary-500/20">α</div>
-                    <span className="font-bold text-xl tracking-tight text-white">Alpha<span className="text-primary-400">Sync</span></span>
+                    <span className="font-bold text-xl tracking-tight text-heading">Alpha<span className="text-primary-400">Sync</span></span>
                 </div>
                 <div className="flex items-center gap-4">
                     {isAuthenticated ? (
@@ -27,7 +27,7 @@ export default function LandingPage() {
                         </Link>
                     ) : (
                         <>
-                            <Link to="/login" className="text-gray-400 hover:text-white transition-colors text-sm font-medium">Sign In</Link>
+                            <Link to="/login" className="text-gray-400 hover:text-heading transition-colors text-sm font-medium">Sign In</Link>
                             <Link to="/register" className="btn-primary text-sm">Get Started</Link>
                         </>
                     )}
@@ -47,7 +47,7 @@ export default function LandingPage() {
                     </div>
 
                     <h1 className="text-5xl lg:text-7xl font-extrabold leading-tight mb-6">
-                        <span className="text-white">Trade Like a Pro.</span>
+                        <span className="text-heading">Trade Like a Pro.</span>
                         <br />
                         <span className="text-gradient">Risk Nothing.</span>
                     </h1>
@@ -76,7 +76,7 @@ export default function LandingPage() {
                             <div className="w-11 h-11 rounded-lg bg-primary-500/10 flex items-center justify-center mb-4 group-hover:bg-primary-500/20 transition-colors">
                                 <Icon className="w-5 h-5 text-primary-400" />
                             </div>
-                            <h3 className="text-white font-semibold mb-2">{title}</h3>
+                            <h3 className="text-heading font-semibold mb-2">{title}</h3>
                             <p className="text-gray-500 text-sm leading-relaxed">{desc}</p>
                         </div>
                     ))}
@@ -93,7 +93,7 @@ export default function LandingPage() {
                         { val: 'Free', label: 'Forever' },
                     ].map(({ val, label }, i) => (
                         <div key={i} className="text-center">
-                            <div className="text-3xl font-bold text-white mb-1">{val}</div>
+                            <div className="text-3xl font-bold text-heading mb-1">{val}</div>
                             <div className="text-sm text-gray-500">{label}</div>
                         </div>
                     ))}
@@ -101,7 +101,7 @@ export default function LandingPage() {
             </section>
 
             {/* Footer */}
-            <footer className="border-t border-white/5 px-6 lg:px-12 py-8">
+            <footer className="border-t border-edge/5 px-6 lg:px-12 py-8">
                 <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
                     <div className="flex items-center gap-2">
                         <div className="w-7 h-7 rounded bg-gradient-to-br from-primary-500 to-accent-cyan flex items-center justify-center text-white font-bold text-xs">α</div>

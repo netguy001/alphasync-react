@@ -73,7 +73,7 @@ export default function AlgoTradingPage() {
         <div className="p-4 lg:p-6 space-y-6 animate-fade-in">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold text-white">Algo Trading</h1>
+                    <h1 className="text-2xl font-bold text-heading">Algo Trading</h1>
                     <p className="text-gray-500 text-sm mt-1">Create and manage automated trading strategies</p>
                 </div>
                 <button onClick={() => setShowCreate(!showCreate)} className="btn-primary inline-flex items-center gap-2 text-sm">
@@ -84,7 +84,7 @@ export default function AlgoTradingPage() {
             {/* Create Strategy Form */}
             {showCreate && (
                 <div className="glass-card p-6 animate-slide-up">
-                    <h3 className="font-semibold text-white mb-4">Create New Strategy</h3>
+                    <h3 className="font-semibold text-heading mb-4">Create New Strategy</h3>
                     <form onSubmit={handleCreate} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label className="label-text">Strategy Name</label>
@@ -130,11 +130,11 @@ export default function AlgoTradingPage() {
                     <div key={s.id} className="glass-card-hover p-5 flex flex-col">
                         <div className="flex items-start justify-between mb-3">
                             <div>
-                                <h3 className="font-semibold text-white">{s.name}</h3>
+                                <h3 className="font-semibold text-heading">{s.name}</h3>
                                 <span className="text-xs text-gray-500">{s.symbol?.replace('.NS', '')} • {STRATEGY_TYPES.find(t => t.value === s.strategy_type)?.label || s.strategy_type}</span>
                             </div>
                             <button onClick={() => handleToggle(s.id)}
-                                className={`p-2 rounded-lg transition-all ${s.is_active ? 'bg-profit/20 text-profit hover:bg-profit/30' : 'bg-surface-700 text-gray-500 hover:text-white'}`}>
+                                className={`p-2 rounded-lg transition-all ${s.is_active ? 'bg-profit/20 text-profit hover:bg-profit/30' : 'bg-surface-700 text-gray-500 hover:text-heading'}`}>
                                 {s.is_active ? <HiPause className="w-4 h-4" /> : <HiPlay className="w-4 h-4" />}
                             </button>
                         </div>
@@ -144,7 +144,7 @@ export default function AlgoTradingPage() {
                         <div className="grid grid-cols-3 gap-2 mt-auto">
                             <div className="text-center p-2 bg-surface-900/50 rounded">
                                 <div className="text-xs text-gray-500">Trades</div>
-                                <div className="font-mono font-bold text-white text-sm">{s.total_trades}</div>
+                                <div className="font-mono font-bold text-heading text-sm">{s.total_trades}</div>
                             </div>
                             <div className="text-center p-2 bg-surface-900/50 rounded">
                                 <div className="text-xs text-gray-500">P&L</div>
@@ -154,7 +154,7 @@ export default function AlgoTradingPage() {
                             </div>
                             <div className="text-center p-2 bg-surface-900/50 rounded">
                                 <div className="text-xs text-gray-500">Win</div>
-                                <div className="font-mono font-bold text-white text-sm">{s.win_rate}%</div>
+                                <div className="font-mono font-bold text-heading text-sm">{s.win_rate}%</div>
                             </div>
                         </div>
 
@@ -178,12 +178,12 @@ export default function AlgoTradingPage() {
             {selectedStrategy && logs.length > 0 && (
                 <div className="glass-card p-5 animate-slide-up">
                     <div className="flex items-center justify-between mb-4">
-                        <h3 className="font-semibold text-white">Strategy Logs</h3>
-                        <button onClick={() => { setSelectedStrategy(null); setLogs([]); }} className="text-gray-500 hover:text-white text-sm">Close</button>
+                        <h3 className="font-semibold text-heading">Strategy Logs</h3>
+                        <button onClick={() => { setSelectedStrategy(null); setLogs([]); }} className="text-gray-500 hover:text-heading text-sm">Close</button>
                     </div>
                     <div className="space-y-1 max-h-[300px] overflow-y-auto">
                         {logs.map(l => (
-                            <div key={l.id} className="flex items-start gap-3 py-2 text-sm border-b border-white/[0.02]">
+                            <div key={l.id} className="flex items-start gap-3 py-2 text-sm border-b border-edge/[0.02]">
                                 <span className={`text-xs font-mono px-1.5 py-0.5 rounded flex-shrink-0 ${l.level === 'ERROR' ? 'bg-red-500/10 text-red-400' : l.level === 'TRADE' ? 'bg-primary-500/10 text-primary-400' : 'bg-surface-700 text-gray-400'}`}>
                                     {l.level}
                                 </span>

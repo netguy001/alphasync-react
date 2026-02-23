@@ -15,6 +15,7 @@ from workers.market_worker import market_data_worker
 from workers.order_worker import order_execution_worker
 from workers.algo_worker import algo_strategy_worker
 from workers.portfolio_worker import portfolio_recalc_worker
+from core.rate_limiter import RateLimitMiddleware
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -37,28 +38,43 @@ async def lifespan(app: FastAPI):
 
     # Wire WebSocket manager as event listener for real-time updates
     event_bus.subscribe(EventType.PRICE_UPDATED, manager.on_price_event)
+    event_bus.subscribe(EventType.ORDER_PLACED, manager.on_order_event)
     event_bus.subscribe(EventType.ORDER_FILLED, manager.on_order_event)
+    event_bus.subscribe(EventType.ORDER_CANCELLED, manager.on_order_event)
+    event_bus.subscribe(EventType.ORDER_EXPIRED, manager.on_order_event)
     event_bus.subscribe(EventType.PORTFOLIO_UPDATED, manager.on_portfolio_event)
     event_bus.subscribe(EventType.ALGO_TRADE, manager.on_algo_event)
     event_bus.subscribe(EventType.ALGO_SIGNAL, manager.on_algo_event)
+    event_bus.subscribe(EventType.ALGO_ERROR, manager.on_algo_event)
 
     # Start background workers
-    background_tasks.extend([
-        asyncio.create_task(market_data_worker.run()),
-        asyncio.create_task(order_execution_worker.run()),
-        asyncio.create_task(algo_strategy_worker.run()),
-    ])
+    background_tasks.extend(
+        [
+            asyncio.create_task(market_data_worker.run()),
+            asyncio.create_task(order_execution_worker.run()),
+            asyncio.create_task(algo_strategy_worker.run()),
+        ]
+    )
 
     # Keep legacy price streaming for backward compat during migration
     streaming_task = asyncio.create_task(manager.start_price_streaming())
     background_tasks.append(streaming_task)
 
     # Emit system startup event
-    await event_bus.emit(Event(
-        type=EventType.SYSTEM_STARTUP,
-        data={"workers": ["event_bus", "market_data", "order_execution", "algo_strategy"]},
-        source="main",
-    ))
+    await event_bus.emit(
+        Event(
+            type=EventType.SYSTEM_STARTUP,
+            data={
+                "workers": [
+                    "event_bus",
+                    "market_data",
+                    "order_execution",
+                    "algo_strategy",
+                ]
+            },
+            source="main",
+        )
+    )
 
     logger.info(
         f"AlphaSync started | Workers: 4 | Market Session: {market_session.get_current_state().value} | "
@@ -98,6 +114,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Rate limiting (added after CORS so rate limit responses also get CORS headers)
+app.add_middleware(RateLimitMiddleware)
 
 # Import and include routers
 from routes.auth import router as auth_router
@@ -156,5 +175,5 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str = None):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
 
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

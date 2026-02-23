@@ -41,7 +41,7 @@ export default function RegisterPage() {
                 <div className="absolute inset-0 bg-gradient-to-br from-accent-emerald/5 to-primary-500/5"></div>
                 <div className="absolute bottom-1/4 left-1/4 w-80 h-80 bg-accent-emerald/10 rounded-full blur-[100px]"></div>
                 <div className="relative text-center p-12">
-                    <h2 className="text-4xl font-bold text-white mb-4">Start Your<br /><span className="text-gradient">Trading Journey</span></h2>
+                    <h2 className="text-4xl font-bold text-heading mb-4">Start Your<br /><span className="text-gradient">Trading Journey</span></h2>
                     <p className="text-gray-500 text-lg max-w-md">Practice with real market data, execute simulated trades, and build your portfolio — risk free.</p>
                     <div className="mt-8 grid grid-cols-2 gap-4 max-w-sm mx-auto">
                         {[
@@ -51,7 +51,7 @@ export default function RegisterPage() {
                             { label: 'Algo Strategies', val: '∞' },
                         ].map(({ label, val }) => (
                             <div key={label} className="glass-card p-4 text-center">
-                                <div className="text-xl font-bold text-white">{val}</div>
+                                <div className="text-xl font-bold text-heading">{val}</div>
                                 <div className="text-xs text-gray-500 mt-1">{label}</div>
                             </div>
                         ))}
@@ -64,10 +64,10 @@ export default function RegisterPage() {
                 <div className="w-full max-w-md animate-fade-in">
                     <div className="flex items-center gap-3 mb-10">
                         <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary-500 to-accent-cyan flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-primary-500/20">α</div>
-                        <span className="font-bold text-2xl tracking-tight text-white">Alpha<span className="text-primary-400">Sync</span></span>
+                        <span className="font-bold text-2xl tracking-tight text-heading">Alpha<span className="text-primary-400">Sync</span></span>
                     </div>
 
-                    <h1 className="text-2xl font-bold text-white mb-2">Create your account</h1>
+                    <h1 className="text-2xl font-bold text-heading mb-2">Create your account</h1>
                     <p className="text-gray-500 mb-8">Join AlphaSync and start trading with ₹10,00,000 virtual capital</p>
 
                     <form onSubmit={handleSubmit} className="space-y-4">
@@ -111,7 +111,7 @@ export default function RegisterPage() {
                         </div>
 
                         <div className="flex items-center gap-2">
-                            <input type="checkbox" onClick={() => setShowPassword(!showPassword)} className="rounded bg-surface-800 border-white/10" />
+                            <input type="checkbox" onClick={() => setShowPassword(!showPassword)} className="rounded bg-surface-800 border-edge/10" />
                             <span className="text-xs text-gray-500">Show passwords</span>
                         </div>
 

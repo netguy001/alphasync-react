@@ -35,7 +35,7 @@ export default function PortfolioPage() {
 
     return (
         <div className="p-4 lg:p-6 space-y-6 animate-fade-in">
-            <h1 className="text-2xl font-bold text-white">Portfolio</h1>
+            <h1 className="text-2xl font-bold text-heading">Portfolio</h1>
 
             {/* Stats Grid */}
             <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
@@ -53,7 +53,7 @@ export default function PortfolioPage() {
                 ].map(({ label, value, sub, isColor }, i) => (
                     <div key={i} className="stat-card">
                         <span className="text-xs text-gray-500 uppercase tracking-wider">{label}</span>
-                        <span className={`text-xl font-bold font-mono ${isColor && portfolio?.total_pnl != null ? pnlColor(portfolio.total_pnl) : 'text-white'}`}>
+                        <span className={`text-xl font-bold font-mono ${isColor && portfolio?.total_pnl != null ? pnlColor(portfolio.total_pnl) : 'text-heading'}`}>
                             {value}
                         </span>
                         {sub && <span className={`text-xs ${isColor ? pnlColor(portfolio?.total_pnl || 0) : 'text-gray-500'}`}>{sub}</span>}
@@ -81,7 +81,7 @@ export default function PortfolioPage() {
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm">
                             <thead>
-                                <tr className="text-gray-500 text-xs uppercase border-b border-white/5">
+                                <tr className="text-gray-500 text-xs uppercase border-b border-edge/5">
                                     <th className="text-left py-3 font-medium">Symbol</th>
                                     <th className="text-right py-3 font-medium">Qty</th>
                                     <th className="text-right py-3 font-medium">Avg Price</th>
@@ -94,16 +94,16 @@ export default function PortfolioPage() {
                             </thead>
                             <tbody>
                                 {holdings.map((h, i) => (
-                                    <tr key={i} className="border-b border-white/[0.02] hover:bg-white/[0.02] transition-colors">
+                                    <tr key={i} className="border-b border-edge/[0.02] hover:bg-overlay/[0.02] transition-colors">
                                         <td className="py-3">
-                                            <div className="font-semibold text-white">{h.symbol?.replace('.NS', '')}</div>
+                                            <div className="font-semibold text-heading">{h.symbol?.replace('.NS', '')}</div>
                                             <div className="text-xs text-gray-600">{h.company_name || h.exchange}</div>
                                         </td>
                                         <td className="py-3 text-right font-mono text-gray-300">{h.quantity}</td>
                                         <td className="py-3 text-right font-mono text-gray-300">{Number(h.avg_price).toFixed(2)}</td>
-                                        <td className="py-3 text-right font-mono text-white font-semibold">{Number(h.current_price).toFixed(2)}</td>
+                                        <td className="py-3 text-right font-mono text-heading font-semibold">{Number(h.current_price).toFixed(2)}</td>
                                         <td className="py-3 text-right font-mono text-gray-300">{fmt(h.invested_value)}</td>
-                                        <td className="py-3 text-right font-mono text-white">{fmt(h.current_value)}</td>
+                                        <td className="py-3 text-right font-mono text-heading">{fmt(h.current_value)}</td>
                                         <td className={`py-3 text-right font-mono font-semibold ${pnlColor(h.pnl)}`}>
                                             {h.pnl >= 0 ? '+' : ''}{fmt(h.pnl)}
                                         </td>

@@ -41,10 +41,10 @@ export default function LoginPage() {
                     {/* Logo */}
                     <div className="flex items-center gap-3 mb-10">
                         <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary-500 to-accent-cyan flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-primary-500/20">α</div>
-                        <span className="font-bold text-2xl tracking-tight text-white">Alpha<span className="text-primary-400">Sync</span></span>
+                        <span className="font-bold text-2xl tracking-tight text-heading">Alpha<span className="text-primary-400">Sync</span></span>
                     </div>
 
-                    <h1 className="text-2xl font-bold text-white mb-2">Welcome back</h1>
+                    <h1 className="text-2xl font-bold text-heading mb-2">Welcome back</h1>
                     <p className="text-gray-500 mb-8">Sign in to access your trading terminal</p>
 
                     <form onSubmit={handleSubmit} className="space-y-5">
@@ -103,7 +103,7 @@ export default function LoginPage() {
                 <div className="absolute inset-0 bg-gradient-to-br from-primary-500/5 to-accent-cyan/5"></div>
                 <div className="absolute top-1/4 right-1/4 w-80 h-80 bg-primary-500/10 rounded-full blur-[100px]"></div>
                 <div className="relative text-center p-12">
-                    <div className="text-6xl font-extrabold text-white/10 mb-4">₹10,00,000</div>
+                    <div className="text-6xl font-extrabold text-heading/10 mb-4">₹10,00,000</div>
                     <p className="text-gray-500 text-lg">Virtual capital to practice trading</p>
                     <div className="mt-8 flex justify-center gap-6">
                         {['NIFTY 50', 'SENSEX', 'BANK NIFTY'].map(idx => (

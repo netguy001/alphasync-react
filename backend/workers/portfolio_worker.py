@@ -38,7 +38,38 @@ class PortfolioRecalcWorker:
 
         Updates the user's portfolio, holdings, creates a transaction
         record, and emits PORTFOLIO_UPDATED for the WebSocket layer.
+
+        NOTE: Events from 'trading_engine' source are skipped because
+        MARKET orders already update the portfolio inline during place_order().
+        This handler only processes fills from the order_execution_worker
+        (LIMIT/STOP_LOSS fills that happen asynchronously).
         """
+        # Skip MARKET fills — portfolio already updated in place_order()
+        if event.source == "trading_engine":
+            # Still emit PORTFOLIO_UPDATED for WebSocket notifications
+            user_id = event.data.get("user_id")
+            if user_id:
+                async with async_session_factory() as db:
+                    result = await db.execute(
+                        select(Portfolio).where(Portfolio.user_id == user_id)
+                    )
+                    portfolio = result.scalar_one_or_none()
+                    if portfolio:
+                        await event_bus.emit(
+                            Event(
+                                type=EventType.PORTFOLIO_UPDATED,
+                                data={
+                                    "user_id": user_id,
+                                    "available_capital": portfolio.available_capital,
+                                    "total_invested": portfolio.total_invested,
+                                    "total_pnl": portfolio.total_pnl,
+                                },
+                                user_id=user_id,
+                                source="portfolio_worker",
+                            )
+                        )
+            return
+
         order_id = event.data.get("order_id")
         user_id = event.data.get("user_id")
         symbol = event.data.get("symbol")
@@ -70,20 +101,38 @@ class PortfolioRecalcWorker:
                 total_value = filled_price * quantity
 
                 if side == "BUY":
-                    await self._handle_buy(db, portfolio, symbol, quantity, filled_price, total_value, user_id)
+                    await self._handle_buy(
+                        db,
+                        portfolio,
+                        symbol,
+                        quantity,
+                        filled_price,
+                        total_value,
+                        user_id,
+                    )
                 elif side == "SELL":
-                    await self._handle_sell(db, portfolio, symbol, quantity, filled_price, total_value, user_id)
+                    await self._handle_sell(
+                        db,
+                        portfolio,
+                        symbol,
+                        quantity,
+                        filled_price,
+                        total_value,
+                        user_id,
+                    )
 
                 # Create transaction record
-                db.add(Transaction(
-                    user_id=user_id,
-                    order_id=order_id,
-                    symbol=symbol,
-                    transaction_type=side,
-                    quantity=quantity,
-                    price=filled_price,
-                    total_value=total_value,
-                ))
+                db.add(
+                    Transaction(
+                        user_id=user_id,
+                        order_id=order_id,
+                        symbol=symbol,
+                        transaction_type=side,
+                        quantity=quantity,
+                        price=filled_price,
+                        total_value=total_value,
+                    )
+                )
 
                 # Recalculate portfolio totals
                 await self._recalculate_totals(db, portfolio)
@@ -92,22 +141,26 @@ class PortfolioRecalcWorker:
                 self._stats["recalcs"] += 1
 
                 # Emit portfolio update for WebSocket
-                await event_bus.emit(Event(
-                    type=EventType.PORTFOLIO_UPDATED,
-                    data={
-                        "user_id": user_id,
-                        "available_capital": portfolio.available_capital,
-                        "total_invested": portfolio.total_invested,
-                        "total_pnl": portfolio.total_pnl,
-                    },
-                    user_id=user_id,
-                    source="portfolio_worker",
-                ))
+                await event_bus.emit(
+                    Event(
+                        type=EventType.PORTFOLIO_UPDATED,
+                        data={
+                            "user_id": user_id,
+                            "available_capital": portfolio.available_capital,
+                            "total_invested": portfolio.total_invested,
+                            "total_pnl": portfolio.total_pnl,
+                        },
+                        user_id=user_id,
+                        source="portfolio_worker",
+                    )
+                )
 
             except Exception as e:
                 await db.rollback()
                 self._stats["errors"] += 1
-                logger.error(f"Portfolio recalc failed for user {user_id}: {e}", exc_info=True)
+                logger.error(
+                    f"Portfolio recalc failed for user {user_id}: {e}", exc_info=True
+                )
 
     async def _handle_buy(
         self,
@@ -137,6 +190,15 @@ class PortfolioRecalcWorker:
             new_value = old_value + total_value
             holding.quantity += quantity
             holding.avg_price = new_value / holding.quantity
+            holding.invested_value = holding.avg_price * holding.quantity
+            holding.current_price = price
+            holding.current_value = price * holding.quantity
+            holding.pnl = holding.current_value - holding.invested_value
+            holding.pnl_percent = (
+                (holding.pnl / holding.invested_value * 100)
+                if holding.invested_value
+                else 0
+            )
         else:
             # Fetch symbol name
             quote = await market_data.get_quote(symbol)
@@ -145,9 +207,12 @@ class PortfolioRecalcWorker:
             holding = Holding(
                 portfolio_id=portfolio.id,
                 symbol=symbol,
-                name=name,
+                company_name=name,
                 quantity=quantity,
                 avg_price=price,
+                current_price=price,
+                invested_value=total_value,
+                current_value=total_value,
             )
             db.add(holding)
 
@@ -177,16 +242,23 @@ class PortfolioRecalcWorker:
         realized_pnl = (price - holding.avg_price) * quantity
 
         portfolio.available_capital += total_value
-        portfolio.total_invested -= (holding.avg_price * quantity)
+        portfolio.total_invested -= holding.avg_price * quantity
         portfolio.total_pnl += realized_pnl
 
         holding.quantity -= quantity
         if holding.quantity <= 0:
             await db.delete(holding)
+        else:
+            holding.invested_value = holding.avg_price * holding.quantity
+            holding.current_value = price * holding.quantity
+            holding.pnl = holding.current_value - holding.invested_value
+            holding.pnl_percent = (
+                (holding.pnl / holding.invested_value * 100)
+                if holding.invested_value
+                else 0
+            )
 
-    async def _recalculate_totals(
-        self, db, portfolio: Portfolio
-    ) -> None:
+    async def _recalculate_totals(self, db, portfolio: Portfolio) -> None:
         """Recalculate portfolio market value and unrealized P&L."""
         result = await db.execute(
             select(Holding).where(Holding.portfolio_id == portfolio.id)

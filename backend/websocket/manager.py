@@ -14,17 +14,24 @@ class ConnectionManager:
     def __init__(self):
         self.active_connections: Dict[str, WebSocket] = {}  # connection_id -> websocket
         self.subscriptions: Dict[str, Set[str]] = {}  # symbol -> set of connection_ids
-        self.user_connections: Dict[str, Set[str]] = {}  # user_id -> set of connection_ids
+        self.user_connections: Dict[str, Set[str]] = (
+            {}
+        )  # user_id -> set of connection_ids
         self.connection_users: Dict[str, str] = {}  # connection_id -> user_id
         self._streaming_task = None
 
-    async def connect(self, websocket: WebSocket, connection_id: str, user_id: Optional[str] = None):
+    async def connect(
+        self, websocket: WebSocket, connection_id: str, user_id: Optional[str] = None
+    ):
         await websocket.accept()
         self.active_connections[connection_id] = websocket
         if user_id:
             self.connection_users[connection_id] = user_id
             self.user_connections.setdefault(user_id, set()).add(connection_id)
-        logger.info(f"WebSocket connected: {connection_id}" + (f" (user: {user_id[:8]}...)" if user_id else ""))
+        logger.info(
+            f"WebSocket connected: {connection_id}"
+            + (f" (user: {user_id[:8]}...)" if user_id else "")
+        )
 
     def disconnect(self, connection_id: str):
         self.active_connections.pop(connection_id, None)
@@ -84,11 +91,13 @@ class ConnectionManager:
             ws = self.active_connections.get(conn_id)
             if ws:
                 try:
-                    await ws.send_json({
-                        "type": "price_update",
-                        "channel": "prices",
-                        "data": price_data,
-                    })
+                    await ws.send_json(
+                        {
+                            "type": "price_update",
+                            "channel": "prices",
+                            "data": price_data,
+                        }
+                    )
                 except Exception:
                     dead.append(conn_id)
         for d in dead:
@@ -116,34 +125,43 @@ class ConnectionManager:
             await self.broadcast_price(symbol, quote)
 
     async def on_order_event(self, event):
-        """Handle ORDER_FILLED events — send to the specific user."""
+        """Handle ORDER_* events — send to the specific user."""
         user_id = event.user_id
         if user_id:
-            await self.send_to_user(user_id, {
-                "type": "order_filled",
-                "channel": "orders",
-                "data": event.data,
-            })
+            await self.send_to_user(
+                user_id,
+                {
+                    "type": event.type.value,
+                    "channel": "orders",
+                    "data": event.data,
+                },
+            )
 
     async def on_portfolio_event(self, event):
         """Handle PORTFOLIO_UPDATED events — send to the specific user."""
         user_id = event.user_id
         if user_id:
-            await self.send_to_user(user_id, {
-                "type": "portfolio_update",
-                "channel": "portfolio",
-                "data": event.data,
-            })
+            await self.send_to_user(
+                user_id,
+                {
+                    "type": "portfolio_update",
+                    "channel": "portfolio",
+                    "data": event.data,
+                },
+            )
 
     async def on_algo_event(self, event):
         """Handle ALGO_TRADE / ALGO_SIGNAL events — send to the specific user."""
         user_id = event.user_id
         if user_id:
-            await self.send_to_user(user_id, {
-                "type": event.type.value,
-                "channel": "algo",
-                "data": event.data,
-            })
+            await self.send_to_user(
+                user_id,
+                {
+                    "type": event.type.value,
+                    "channel": "algo",
+                    "data": event.data,
+                },
+            )
 
     # ── Legacy Price Streaming ──────────────────────────────────────
     # Kept for backward compat; will be migrated to Market Data Worker
@@ -176,24 +194,32 @@ class ConnectionManager:
             if action == "subscribe":
                 symbols = data.get("symbols", [])
                 self.subscribe(connection_id, symbols)
-                await self.send_personal(connection_id, {
-                    "type": "subscribed",
-                    "symbols": symbols,
-                })
+                await self.send_personal(
+                    connection_id,
+                    {
+                        "type": "subscribed",
+                        "symbols": symbols,
+                    },
+                )
             elif action == "unsubscribe":
                 symbols = data.get("symbols", [])
                 self.unsubscribe(connection_id, symbols)
-                await self.send_personal(connection_id, {
-                    "type": "unsubscribed",
-                    "symbols": symbols,
-                })
+                await self.send_personal(
+                    connection_id,
+                    {
+                        "type": "unsubscribed",
+                        "symbols": symbols,
+                    },
+                )
             elif action == "ping":
-                await self.send_personal(connection_id, {
-                    "type": "pong",
-                })
+                await self.send_personal(
+                    connection_id,
+                    {
+                        "type": "pong",
+                    },
+                )
         except json.JSONDecodeError:
             pass
 
 
 manager = ConnectionManager()
-

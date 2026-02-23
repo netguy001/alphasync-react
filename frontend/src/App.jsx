@@ -44,9 +44,9 @@ export default function App() {
                     position="top-right"
                     toastOptions={{
                         style: {
-                            background: '#1a1d2e',
-                            color: '#fff',
-                            border: '1px solid rgba(255,255,255,0.05)',
+                            background: 'rgb(var(--surface-700))',
+                            color: 'rgb(var(--c-heading))',
+                            border: '1px solid rgb(var(--c-edge) / 0.05)',
                             fontSize: '14px',
                         },
                         success: { iconTheme: { primary: '#22c55e', secondary: '#fff' } },

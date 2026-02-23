@@ -67,13 +67,13 @@ export default function SettingsPage() {
 
     return (
         <div className="p-4 lg:p-6 space-y-6 max-w-3xl animate-fade-in">
-            <h1 className="text-2xl font-bold text-white">Settings</h1>
+            <h1 className="text-2xl font-bold text-heading">Settings</h1>
 
             {/* Profile */}
             <div className="glass-card p-6">
                 <div className="flex items-center gap-3 mb-5">
                     <HiOutlineUser className="w-5 h-5 text-primary-400" />
-                    <h2 className="font-semibold text-white">Profile</h2>
+                    <h2 className="font-semibold text-heading">Profile</h2>
                 </div>
                 <form onSubmit={updateProfile} className="space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -104,7 +104,7 @@ export default function SettingsPage() {
                     <div className="flex items-center gap-3">
                         {theme === 'dark' ? <HiOutlineMoon className="w-5 h-5 text-primary-400" /> : <HiOutlineSun className="w-5 h-5 text-amber-400" />}
                         <div>
-                            <h2 className="font-semibold text-white">Theme</h2>
+                            <h2 className="font-semibold text-heading">Theme</h2>
                             <p className="text-sm text-gray-500">Currently using {theme} mode</p>
                         </div>
                     </div>
@@ -120,7 +120,7 @@ export default function SettingsPage() {
             <div className="glass-card p-6">
                 <div className="flex items-center gap-3 mb-5">
                     <HiOutlineLockClosed className="w-5 h-5 text-primary-400" />
-                    <h2 className="font-semibold text-white">Change Password</h2>
+                    <h2 className="font-semibold text-heading">Change Password</h2>
                 </div>
                 <form onSubmit={changePassword} className="space-y-4">
                     <div>
@@ -145,7 +145,7 @@ export default function SettingsPage() {
             <div className="glass-card p-6">
                 <div className="flex items-center gap-3 mb-5">
                     <HiOutlineShieldCheck className="w-5 h-5 text-primary-400" />
-                    <h2 className="font-semibold text-white">Two-Factor Authentication</h2>
+                    <h2 className="font-semibold text-heading">Two-Factor Authentication</h2>
                 </div>
 
                 {twoFA.enabled ? (

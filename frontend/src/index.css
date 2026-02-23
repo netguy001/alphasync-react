@@ -3,6 +3,55 @@
 @tailwind utilities;
 
 @layer base {
+
+  /* ─── Theme CSS Custom Properties ─── */
+  :root,
+  .dark {
+    --surface-50: 248 250 252;
+    --surface-100: 241 245 249;
+    --surface-200: 226 232 240;
+    --surface-700: 26 29 46;
+    --surface-800: 19 22 37;
+    --surface-850: 15 18 32;
+    --surface-900: 11 14 26;
+    --surface-950: 7 10 20;
+
+    --gray-300: 209 213 219;
+    --gray-400: 156 163 175;
+    --gray-500: 107 114 128;
+    --gray-600: 75 85 99;
+    --gray-700: 55 65 81;
+
+    --c-heading: 255 255 255;
+    --c-edge: 255 255 255;
+    --c-overlay: 255 255 255;
+
+    color-scheme: dark;
+  }
+
+  .light {
+    --surface-50: 248 250 252;
+    --surface-100: 241 245 249;
+    --surface-200: 226 232 240;
+    --surface-700: 203 213 225;
+    --surface-800: 241 245 249;
+    --surface-850: 248 250 252;
+    --surface-900: 255 255 255;
+    --surface-950: 243 244 246;
+
+    --gray-300: 51 65 85;
+    --gray-400: 100 116 139;
+    --gray-500: 148 163 184;
+    --gray-600: 203 213 225;
+    --gray-700: 226 232 240;
+
+    --c-heading: 15 23 42;
+    --c-edge: 0 0 0;
+    --c-overlay: 0 0 0;
+
+    color-scheme: light;
+  }
+
   * {
     margin: 0;
     padding: 0;
@@ -19,26 +68,52 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
-  /* Custom scrollbar */
-  ::-webkit-scrollbar {
+  /* Custom scrollbar - dark */
+  .dark ::-webkit-scrollbar,
+  :root ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
   }
-  ::-webkit-scrollbar-track {
+
+  .dark ::-webkit-scrollbar-track,
+  :root ::-webkit-scrollbar-track {
     background: rgba(15, 18, 32, 0.5);
   }
-  ::-webkit-scrollbar-thumb {
+
+  .dark ::-webkit-scrollbar-thumb,
+  :root ::-webkit-scrollbar-thumb {
     background: rgba(99, 102, 241, 0.3);
     border-radius: 3px;
   }
-  ::-webkit-scrollbar-thumb:hover {
+
+  .dark ::-webkit-scrollbar-thumb:hover,
+  :root ::-webkit-scrollbar-thumb:hover {
     background: rgba(99, 102, 241, 0.5);
+  }
+
+  /* Custom scrollbar - light */
+  .light ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .light ::-webkit-scrollbar-track {
+    background: rgba(241, 245, 249, 0.8);
+  }
+
+  .light ::-webkit-scrollbar-thumb {
+    background: rgba(99, 102, 241, 0.25);
+    border-radius: 3px;
+  }
+
+  .light ::-webkit-scrollbar-thumb:hover {
+    background: rgba(99, 102, 241, 0.45);
   }
 }
 
 @layer components {
   .glass-card {
-    @apply bg-surface-800/60 backdrop-blur-xl border border-white/5 rounded-xl;
+    @apply bg-surface-800/60 backdrop-blur-xl border border-edge/5 rounded-xl;
   }
 
   .glass-card-hover {
@@ -46,33 +121,23 @@
   }
 
   .btn-primary {
-    @apply bg-primary-600 hover:bg-primary-500 text-white font-semibold px-6 py-2.5 rounded-lg
-           transition-all duration-200 shadow-lg shadow-primary-600/20 hover:shadow-primary-500/30
-           active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply bg-primary-600 hover:bg-primary-500 text-white font-semibold px-6 py-2.5 rounded-lg transition-all duration-200 shadow-lg shadow-primary-600/20 hover:shadow-primary-500/30 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
   .btn-secondary {
-    @apply bg-surface-700 hover:bg-surface-700/80 text-white font-medium px-5 py-2.5 rounded-lg
-           border border-white/10 hover:border-white/20 transition-all duration-200
-           active:scale-[0.98];
+    @apply bg-surface-700 hover:bg-surface-700/80 text-heading font-medium px-5 py-2.5 rounded-lg border border-edge/10 hover:border-edge/20 transition-all duration-200 active:scale-[0.98];
   }
 
   .btn-buy {
-    @apply bg-buy hover:bg-green-400 text-white font-bold px-6 py-3 rounded-lg
-           transition-all duration-200 shadow-lg shadow-green-500/20
-           active:scale-[0.98];
+    @apply bg-buy hover:bg-green-400 text-white font-bold px-6 py-3 rounded-lg transition-all duration-200 shadow-lg shadow-green-500/20 active:scale-[0.98];
   }
 
   .btn-sell {
-    @apply bg-sell hover:bg-red-400 text-white font-bold px-6 py-3 rounded-lg
-           transition-all duration-200 shadow-lg shadow-red-500/20
-           active:scale-[0.98];
+    @apply bg-sell hover:bg-red-400 text-white font-bold px-6 py-3 rounded-lg transition-all duration-200 shadow-lg shadow-red-500/20 active:scale-[0.98];
   }
 
   .input-field {
-    @apply w-full bg-surface-900/80 border border-white/10 rounded-lg px-4 py-3
-           text-white placeholder-gray-500 focus:outline-none focus:border-primary-500/50
-           focus:ring-1 focus:ring-primary-500/20 transition-all duration-200;
+    @apply w-full bg-surface-900/80 border border-edge/10 rounded-lg px-4 py-3 text-heading placeholder-gray-500 focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/20 transition-all duration-200;
   }
 
   .label-text {
@@ -88,12 +153,11 @@
   }
 
   .sidebar-link {
-    @apply flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:text-white
-           hover:bg-white/5 transition-all duration-200 font-medium text-sm;
+    @apply flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:text-heading hover:bg-overlay/5 transition-all duration-200 font-medium text-sm;
   }
 
   .sidebar-link-active {
-    @apply sidebar-link text-white bg-primary-600/20 border-l-2 border-primary-500;
+    @apply sidebar-link text-heading bg-primary-600/20 border-l-2 border-primary-500;
   }
 
   .stat-card {

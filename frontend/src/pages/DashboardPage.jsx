@@ -47,7 +47,7 @@ export default function DashboardPage() {
         <div className="p-4 lg:p-6 space-y-6 animate-fade-in">
             {/* Welcome */}
             <div>
-                <h1 className="text-2xl font-bold text-white">Welcome back, {user?.full_name?.split(' ')[0] || 'Trader'}</h1>
+                <h1 className="text-2xl font-bold text-heading">Welcome back, {user?.full_name?.split(' ')[0] || 'Trader'}</h1>
                 <p className="text-gray-500 text-sm mt-1">Here's your portfolio overview</p>
             </div>
 
@@ -55,15 +55,15 @@ export default function DashboardPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="stat-card">
                     <span className="text-xs text-gray-500 uppercase tracking-wider">Available Capital</span>
-                    <span className="text-xl font-bold text-white font-mono">{fmt(portfolio?.available_capital)}</span>
+                    <span className="text-xl font-bold text-heading font-mono">{fmt(portfolio?.available_capital)}</span>
                 </div>
                 <div className="stat-card">
                     <span className="text-xs text-gray-500 uppercase tracking-wider">Total Invested</span>
-                    <span className="text-xl font-bold text-white font-mono">{fmt(portfolio?.total_invested)}</span>
+                    <span className="text-xl font-bold text-heading font-mono">{fmt(portfolio?.total_invested)}</span>
                 </div>
                 <div className="stat-card">
                     <span className="text-xs text-gray-500 uppercase tracking-wider">Current Value</span>
-                    <span className="text-xl font-bold text-white font-mono">{fmt(portfolio?.current_value)}</span>
+                    <span className="text-xl font-bold text-heading font-mono">{fmt(portfolio?.current_value)}</span>
                 </div>
                 <div className="stat-card">
                     <span className="text-xs text-gray-500 uppercase tracking-wider">Total P&L</span>
@@ -85,8 +85,8 @@ export default function DashboardPage() {
                         {indices.length > 0 ? indices.map((idx, i) => (
                             <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-surface-900/50">
                                 <div>
-                                    <div className="font-semibold text-white text-sm">{idx.name}</div>
-                                    <div className="text-lg font-mono text-white">{Number(idx.price).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>
+                                    <div className="font-semibold text-heading text-sm">{idx.name}</div>
+                                    <div className="text-lg font-mono text-heading">{Number(idx.price).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>
                                 </div>
                                 <div className={`text-right ${pnlColor(idx.change)}`}>
                                     <div className="flex items-center gap-1 text-sm font-mono">
@@ -109,14 +109,14 @@ export default function DashboardPage() {
                     <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">Quick Actions</h2>
                     <div className="space-y-3">
                         <Link to="/terminal" className="flex items-center justify-between p-3 rounded-lg bg-primary-600/10 hover:bg-primary-600/20 border border-primary-500/20 transition-all group">
-                            <span className="text-sm font-medium text-white">Open Trading Terminal</span>
+                            <span className="text-sm font-medium text-heading">Open Trading Terminal</span>
                             <HiArrowRight className="w-4 h-4 text-primary-400 group-hover:translate-x-1 transition-transform" />
                         </Link>
-                        <Link to="/portfolio" className="flex items-center justify-between p-3 rounded-lg bg-surface-800/50 hover:bg-surface-800 border border-white/5 transition-all group">
+                        <Link to="/portfolio" className="flex items-center justify-between p-3 rounded-lg bg-surface-800/50 hover:bg-surface-800 border border-edge/5 transition-all group">
                             <span className="text-sm font-medium text-gray-300">View Portfolio</span>
                             <HiArrowRight className="w-4 h-4 text-gray-500 group-hover:translate-x-1 transition-transform" />
                         </Link>
-                        <Link to="/algo" className="flex items-center justify-between p-3 rounded-lg bg-surface-800/50 hover:bg-surface-800 border border-white/5 transition-all group">
+                        <Link to="/algo" className="flex items-center justify-between p-3 rounded-lg bg-surface-800/50 hover:bg-surface-800 border border-edge/5 transition-all group">
                             <span className="text-sm font-medium text-gray-300">Algo Strategies</span>
                             <HiArrowRight className="w-4 h-4 text-gray-500 group-hover:translate-x-1 transition-transform" />
                         </Link>
@@ -137,11 +137,11 @@ export default function DashboardPage() {
                             {holdings.slice(0, 5).map((h, i) => (
                                 <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-surface-900/50">
                                     <div>
-                                        <div className="text-sm font-semibold text-white">{h.symbol?.replace('.NS', '')}</div>
+                                        <div className="text-sm font-semibold text-heading">{h.symbol?.replace('.NS', '')}</div>
                                         <div className="text-xs text-gray-500">{h.quantity} @ {fmt(h.avg_price)}</div>
                                     </div>
                                     <div className="text-right">
-                                        <div className="text-sm font-mono text-white">{fmt(h.current_value)}</div>
+                                        <div className="text-sm font-mono text-heading">{fmt(h.current_value)}</div>
                                         <div className={`text-xs font-mono ${pnlColor(h.pnl)}`}>
                                             {h.pnl >= 0 ? '+' : ''}{fmt(h.pnl)} ({h.pnl_percent >= 0 ? '+' : ''}{h.pnl_percent?.toFixed(2)}%)
                                         </div>
@@ -172,12 +172,12 @@ export default function DashboardPage() {
                                             {o.side}
                                         </span>
                                         <div>
-                                            <div className="text-sm font-semibold text-white">{o.symbol?.replace('.NS', '')}</div>
+                                            <div className="text-sm font-semibold text-heading">{o.symbol?.replace('.NS', '')}</div>
                                             <div className="text-xs text-gray-500">{o.quantity} qty</div>
                                         </div>
                                     </div>
                                     <div className="text-right">
-                                        <div className="text-sm font-mono text-white">{fmt(o.filled_price || o.price)}</div>
+                                        <div className="text-sm font-mono text-heading">{fmt(o.filled_price || o.price)}</div>
                                         <span className={`text-xs px-1.5 py-0.5 rounded ${o.status === 'FILLED' ? 'text-profit bg-profit/10' : 'text-amber-400 bg-amber-400/10'}`}>
                                             {o.status}
                                         </span>

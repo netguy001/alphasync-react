@@ -6,6 +6,8 @@ from sqlalchemy import select, and_
 from models.order import Order
 from models.portfolio import Portfolio, Holding, Transaction
 from services import market_data
+from core.event_bus import event_bus, Event, EventType
+from engines.risk_engine import risk_engine
 import logging
 
 logger = logging.getLogger(__name__)
@@ -22,13 +24,16 @@ async def place_order(
     trigger_price: Optional[float] = None,
 ) -> dict:
     """Place and potentially execute a simulated order."""
-    
+
     symbol = market_data._format_symbol(symbol)
 
     # Get current market price
     quote = await market_data.get_quote(symbol)
     if not quote or not quote.get("price"):
-        return {"success": False, "error": "Unable to fetch market price for this symbol"}
+        return {
+            "success": False,
+            "error": "Unable to fetch market price for this symbol",
+        }
 
     current_price = quote["price"]
 
@@ -47,12 +52,32 @@ async def place_order(
         execution_price = price
     elif order_type in ("STOP_LOSS", "STOP_LOSS_LIMIT"):
         if trigger_price is None:
-            return {"success": False, "error": "Trigger price required for stop-loss orders"}
+            return {
+                "success": False,
+                "error": "Trigger price required for stop-loss orders",
+            }
         execution_price = price if price else current_price
     else:
         return {"success": False, "error": f"Invalid order type: {order_type}"}
 
     total_cost = execution_price * quantity
+
+    # ── Risk Engine pre-trade validation ────────────────────────
+    risk_result = await risk_engine.validate_order(
+        db=db,
+        user_id=user_id,
+        symbol=symbol,
+        side=side,
+        order_type=order_type,
+        quantity=quantity,
+        price=execution_price,
+        is_algo=False,
+    )
+    if not risk_result.passed:
+        return {
+            "success": False,
+            "error": f"Risk check failed ({risk_result.check_name}): {risk_result.reason}",
+        }
 
     # Check capital for BUY orders
     if side == "BUY":
@@ -98,12 +123,59 @@ async def place_order(
         order.executed_at = datetime.utcnow()
 
         # Update portfolio
-        await _update_portfolio_on_fill(db, portfolio, symbol, side, quantity, current_price, order.id, user_id, quote.get("name", symbol))
+        await _update_portfolio_on_fill(
+            db,
+            portfolio,
+            symbol,
+            side,
+            quantity,
+            current_price,
+            order.id,
+            user_id,
+            quote.get("name", symbol),
+        )
     else:
         # LIMIT and STOP_LOSS orders stay OPEN
         order.status = "OPEN"
 
     await db.flush()
+
+    # ── Emit events for downstream consumers ────────────────────
+    if order.status == "FILLED":
+        await event_bus.emit_nowait(
+            Event(
+                type=EventType.ORDER_FILLED,
+                data={
+                    "order_id": str(order.id),
+                    "user_id": user_id,
+                    "symbol": symbol,
+                    "side": side,
+                    "quantity": quantity,
+                    "filled_price": order.filled_price,
+                },
+                user_id=user_id,
+                source="trading_engine",
+            )
+        )
+    else:
+        await event_bus.emit_nowait(
+            Event(
+                type=EventType.ORDER_PLACED,
+                data={
+                    "order_id": str(order.id),
+                    "user_id": user_id,
+                    "symbol": symbol,
+                    "side": side,
+                    "order_type": order_type,
+                    "quantity": quantity,
+                    "price": price,
+                    "trigger_price": trigger_price,
+                    "status": order.status,
+                },
+                user_id=user_id,
+                source="trading_engine",
+            )
+        )
 
     return {
         "success": True,
@@ -150,13 +222,19 @@ async def _update_portfolio_on_fill(
         if holding:
             # Average out
             total_qty = holding.quantity + quantity
-            holding.avg_price = ((holding.avg_price * holding.quantity) + (price * quantity)) / total_qty
+            holding.avg_price = (
+                (holding.avg_price * holding.quantity) + (price * quantity)
+            ) / total_qty
             holding.quantity = total_qty
             holding.invested_value = holding.avg_price * holding.quantity
             holding.current_price = price
             holding.current_value = price * holding.quantity
             holding.pnl = holding.current_value - holding.invested_value
-            holding.pnl_percent = (holding.pnl / holding.invested_value * 100) if holding.invested_value else 0
+            holding.pnl_percent = (
+                (holding.pnl / holding.invested_value * 100)
+                if holding.invested_value
+                else 0
+            )
         else:
             holding = Holding(
                 portfolio_id=portfolio.id,
@@ -192,7 +270,11 @@ async def _update_portfolio_on_fill(
                 holding.current_price = price
                 holding.current_value = price * holding.quantity
                 holding.pnl = holding.current_value - holding.invested_value
-                holding.pnl_percent = (holding.pnl / holding.invested_value * 100) if holding.invested_value else 0
+                holding.pnl_percent = (
+                    (holding.pnl / holding.invested_value * 100)
+                    if holding.invested_value
+                    else 0
+                )
 
     # Create transaction record
     txn = Transaction(
@@ -223,7 +305,12 @@ async def _recalculate_portfolio(db: AsyncSession, portfolio: Portfolio):
     portfolio.total_invested = total_invested
     portfolio.current_value = current_value
     unrealized_pnl = current_value - total_invested
-    portfolio.total_pnl_percent = (unrealized_pnl / total_invested * 100) if total_invested else 0
+    # total_pnl already tracks realized P&L from sells; don't overwrite
+    portfolio.total_pnl_percent = (
+        ((portfolio.total_pnl + unrealized_pnl) / total_invested * 100)
+        if total_invested
+        else 0
+    )
 
 
 async def cancel_order(db: AsyncSession, user_id: str, order_id: str) -> dict:
@@ -236,10 +323,27 @@ async def cancel_order(db: AsyncSession, user_id: str, order_id: str) -> dict:
     if not order:
         return {"success": False, "error": "Order not found"}
     if order.status not in ("OPEN", "PENDING"):
-        return {"success": False, "error": f"Cannot cancel order with status: {order.status}"}
+        return {
+            "success": False,
+            "error": f"Cannot cancel order with status: {order.status}",
+        }
 
     order.status = "CANCELLED"
     order.updated_at = datetime.utcnow()
+
+    await event_bus.emit_nowait(
+        Event(
+            type=EventType.ORDER_CANCELLED,
+            data={
+                "order_id": str(order.id),
+                "symbol": order.symbol,
+                "side": order.side,
+                "quantity": order.quantity,
+            },
+            user_id=user_id,
+            source="trading_engine",
+        )
+    )
 
     return {"success": True, "message": "Order cancelled successfully"}
 
@@ -247,9 +351,7 @@ async def cancel_order(db: AsyncSession, user_id: str, order_id: str) -> dict:
 async def check_pending_orders(db: AsyncSession, user_id: str):
     """Check and execute pending limit/stop-loss orders against current prices."""
     result = await db.execute(
-        select(Order).where(
-            and_(Order.user_id == user_id, Order.status == "OPEN")
-        )
+        select(Order).where(and_(Order.user_id == user_id, Order.status == "OPEN"))
     )
     open_orders = result.scalars().all()
 
@@ -283,6 +385,12 @@ async def check_pending_orders(db: AsyncSession, user_id: str):
                 order.filled_price = current_price
                 order.executed_at = datetime.utcnow()
                 await _update_portfolio_on_fill(
-                    db, portfolio, order.symbol, order.side, order.quantity,
-                    current_price, order.id, user_id
+                    db,
+                    portfolio,
+                    order.symbol,
+                    order.side,
+                    order.quantity,
+                    current_price,
+                    order.id,
+                    user_id,
                 )
