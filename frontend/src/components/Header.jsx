@@ -5,7 +5,7 @@ import { useTheme } from '../context/ThemeContext';
 import api from '../services/api';
 import { HiOutlineSearch, HiOutlineBell, HiOutlineMoon, HiOutlineSun, HiMenu } from 'react-icons/hi';
 
-export default function Header({ onMenuToggle }) {
+export default function Header({ onMenuToggle, sidebarCollapsed }) {
     const { user } = useAuth();
     const { theme, toggleTheme } = useTheme();
     const navigate = useNavigate();
@@ -74,8 +74,12 @@ export default function Header({ onMenuToggle }) {
       flex items-center justify-between px-4 lg:px-6 sticky top-0 z-30">
 
             <div className="flex items-center gap-4">
-                <button onClick={onMenuToggle} className="lg:hidden text-gray-400 hover:text-heading">
-                    <HiMenu className="w-6 h-6" />
+                <button
+                    onClick={onMenuToggle}
+                    className="text-gray-400 hover:text-heading p-1.5 rounded-lg hover:bg-white/5 transition-all"
+                    title="Toggle sidebar"
+                >
+                    <HiMenu className="w-5 h-5" />
                 </button>
 
                 {/* Search */}

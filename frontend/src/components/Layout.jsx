@@ -4,25 +4,30 @@ import Sidebar from './Sidebar';
 import Header from './Header';
 
 export default function Layout() {
-    const [sidebarCollapsed, setSidebarCollapsed] = useState(window.innerWidth < 1024);
+    // Desktop: start expanded; Mobile: start collapsed (hidden)
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(() => window.innerWidth < 1024);
     const location = useLocation();
 
-    // Collapse sidebar on mobile whenever route changes
+    // Auto-close on mobile when navigating
     useEffect(() => {
         if (window.innerWidth < 1024) {
             setSidebarCollapsed(true);
         }
     }, [location.pathname]);
 
+    const toggle = () => setSidebarCollapsed(prev => !prev);
+
     return (
-        <div className="min-h-screen bg-surface-950">
-            <Sidebar
-                collapsed={sidebarCollapsed}
-                onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
-            />
-            <div className={`transition-all duration-300 ${sidebarCollapsed ? 'lg:ml-[72px]' : 'lg:ml-[240px]'}`}>
-                <Header onMenuToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
-                <main className="min-h-[calc(100vh-56px)]">
+        <div className="min-h-screen bg-surface-950 flex">
+            <Sidebar collapsed={sidebarCollapsed} onToggle={toggle} />
+
+            {/* Main content — offset left margin to clear the fixed sidebar on desktop */}
+            <div
+                className={`flex flex-col flex-1 min-w-0 transition-all duration-300 ease-in-out
+                    ${sidebarCollapsed ? 'lg:ml-[72px]' : 'lg:ml-[240px]'}`}
+            >
+                <Header onMenuToggle={toggle} sidebarCollapsed={sidebarCollapsed} />
+                <main className="flex-1 min-h-[calc(100vh-56px)] overflow-y-auto">
                     <Outlet />
                 </main>
             </div>
