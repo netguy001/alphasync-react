@@ -46,8 +46,8 @@ export default function Sidebar({ collapsed, onToggle }) {
                     ${collapsed ? 'w-[72px] max-lg:-translate-x-full' : 'w-[240px] max-lg:translate-x-0'}
                 `}
             >
-                {/* Logo row */}
-                <div className="flex items-center h-16 border-b border-edge/5 flex-shrink-0 px-4 gap-3">
+                {/* Logo row — matches header h-14 */}
+                <div className="flex items-center h-14 border-b border-edge/5 flex-shrink-0 px-4 gap-3">
                     <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary-500 to-accent-cyan
                         flex items-center justify-center text-white font-bold text-lg
                         shadow-lg shadow-primary-500/20 flex-shrink-0">
@@ -113,7 +113,7 @@ export default function Sidebar({ collapsed, onToggle }) {
                 title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
                 className={`
                     hidden lg:flex items-center justify-center
-                    fixed top-[28px] z-50
+                    fixed top-[18px] z-50
                     w-5 h-5 rounded-full
                     bg-surface-700 hover:bg-primary-600 border border-edge/20
                     text-gray-400 hover:text-white shadow-md

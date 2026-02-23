@@ -21,9 +21,23 @@ export default function TradingTerminalPage() {
     const [chartPeriod, setChartPeriod] = useState('3mo');
     const [loading, setLoading] = useState(false);
     const [popularStocks, setPopularStocks] = useState([]);
+    const [addingToWatchlist, setAddingToWatchlist] = useState(false);
+    const [wlSearch, setWlSearch] = useState('');
     const chartRef = useRef(null);
     const chartInstance = useRef(null);
     const seriesRef = useRef(null);
+    const wlDropdownRef = useRef(null);
+
+    // Close watchlist dropdown on outside click
+    useEffect(() => {
+        const handler = (e) => {
+            if (wlDropdownRef.current && !wlDropdownRef.current.contains(e.target)) {
+                setAddingToWatchlist(false);
+            }
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, []);
 
     const fmt = (v) => v != null ? `₹${Number(v).toLocaleString('en-IN', { maximumFractionDigits: 2 })}` : '—';
 
@@ -119,6 +133,7 @@ export default function TradingTerminalPage() {
         if (!chartRef.current || candles.length === 0) return;
         let cancelled = false;
         let resizeHandler = null;
+        let ro = null;
 
         const initChart = async () => {
             const { createChart, ColorType } = await import('lightweight-charts');
@@ -146,14 +161,25 @@ export default function TradingTerminalPage() {
             chartInstance.current = chart;
             seriesRef.current = series;
 
-            resizeHandler = () => { if (chartRef.current) chart.applyOptions({ width: chartRef.current.clientWidth }); };
+            resizeHandler = () => {
+                if (chartRef.current && chartInstance.current) {
+                    chartInstance.current.applyOptions({
+                        width: chartRef.current.clientWidth,
+                        height: chartRef.current.clientHeight,
+                    });
+                }
+            };
             window.addEventListener('resize', resizeHandler);
+            // Also handle sidebar-driven width changes (no window resize event fired)
+            ro = new ResizeObserver(resizeHandler);
+            ro.observe(chartRef.current);
         };
         initChart();
 
         return () => {
             cancelled = true;
             if (resizeHandler) window.removeEventListener('resize', resizeHandler);
+            if (ro) ro.disconnect();
             if (chartInstance.current) {
                 chartInstance.current.remove();
                 chartInstance.current = null;
@@ -212,13 +238,47 @@ export default function TradingTerminalPage() {
     return (
         <div className="h-[calc(100vh-56px)] flex flex-col lg:flex-row overflow-hidden animate-fade-in">
             {/* LEFT: Watchlist */}
-            <div className="w-full lg:w-[260px] border-r border-edge/5 flex flex-col bg-surface-900/30 flex-shrink-0 max-lg:max-h-[200px] lg:max-h-none overflow-hidden">
+            <div className="w-full lg:w-[260px] border-r border-edge/5 flex flex-col bg-surface-900/30 flex-shrink-0 max-lg:h-[180px] lg:max-h-none overflow-hidden">
                 <div className="px-3 py-3 border-b border-edge/5 flex items-center justify-between">
                     <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Watchlist</h3>
-                    <div className="relative group">
-                        <button className="text-gray-500 hover:text-primary-400 transition-colors">
+                    <div className="relative" ref={wlDropdownRef}>
+                        <button
+                            onClick={() => { setAddingToWatchlist(v => !v); setWlSearch(''); }}
+                            className="text-gray-500 hover:text-primary-400 transition-colors p-0.5 rounded"
+                            title="Add symbol to watchlist"
+                        >
                             <HiPlus className="w-4 h-4" />
                         </button>
+                        {addingToWatchlist && (
+                            <div className="absolute right-0 top-7 z-50 w-[200px] bg-surface-800 border border-edge/10 rounded-lg shadow-xl p-2">
+                                <input
+                                    autoFocus
+                                    type="text"
+                                    value={wlSearch}
+                                    onChange={e => setWlSearch(e.target.value.toUpperCase())}
+                                    placeholder="Search symbol..."
+                                    className="w-full bg-surface-900/80 border border-edge/10 rounded px-2.5 py-1.5 text-xs text-heading placeholder-gray-600 focus:outline-none focus:border-primary-500/50 mb-1.5"
+                                />
+                                <div className="max-h-[180px] overflow-y-auto space-y-0.5">
+                                    {popularStocks
+                                        .filter(s => !wlSearch || s.symbol.toUpperCase().includes(wlSearch) || (s.name || '').toUpperCase().includes(wlSearch))
+                                        .slice(0, 12)
+                                        .map(s => (
+                                            <button
+                                                key={s.symbol}
+                                                onClick={() => { addToWatchlist(s.symbol); setAddingToWatchlist(false); setWlSearch(''); }}
+                                                className="w-full text-left px-2 py-1.5 rounded hover:bg-white/5 transition-colors flex items-center justify-between gap-2"
+                                            >
+                                                <span className="text-xs font-semibold text-heading">{s.symbol.replace('.NS', '')}</span>
+                                                <span className="text-[10px] text-gray-500 truncate">{(s.name || '').slice(0, 14)}</span>
+                                            </button>
+                                        ))}
+                                    {popularStocks.filter(s => !wlSearch || s.symbol.toUpperCase().includes(wlSearch) || (s.name || '').toUpperCase().includes(wlSearch)).length === 0 && (
+                                        <p className="text-xs text-gray-600 text-center py-3">No results</p>
+                                    )}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
                 <div className="flex-1 overflow-y-auto">
