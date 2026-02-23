@@ -142,7 +142,7 @@ async def place_order(
 
     # ── Emit events for downstream consumers ────────────────────
     if order.status == "FILLED":
-        await event_bus.emit_nowait(
+        event_bus.emit_nowait(
             Event(
                 type=EventType.ORDER_FILLED,
                 data={
@@ -158,7 +158,7 @@ async def place_order(
             )
         )
     else:
-        await event_bus.emit_nowait(
+        event_bus.emit_nowait(
             Event(
                 type=EventType.ORDER_PLACED,
                 data={
@@ -331,7 +331,7 @@ async def cancel_order(db: AsyncSession, user_id: str, order_id: str) -> dict:
     order.status = "CANCELLED"
     order.updated_at = datetime.utcnow()
 
-    await event_bus.emit_nowait(
+    event_bus.emit_nowait(
         Event(
             type=EventType.ORDER_CANCELLED,
             data={

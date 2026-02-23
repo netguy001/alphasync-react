@@ -151,7 +151,7 @@ async def register(
         )
         db.add(session)
 
-    await event_bus.emit_nowait(
+    event_bus.emit_nowait(
         Event(
             type=EventType.USER_LOGIN,
             data={"user_id": user.id, "email": user.email, "action": "register"},
@@ -215,7 +215,7 @@ async def login(
         )
         db.add(session)
 
-    await event_bus.emit_nowait(
+    event_bus.emit_nowait(
         Event(
             type=EventType.USER_LOGIN,
             data={"user_id": user.id, "email": user.email},
@@ -368,7 +368,7 @@ async def logout(
             session.is_active = False
 
     if user_id:
-        await event_bus.emit_nowait(
+        event_bus.emit_nowait(
             Event(
                 type=EventType.USER_LOGOUT,
                 data={"user_id": user_id},
