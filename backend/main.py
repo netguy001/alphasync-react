@@ -1,0 +1,160 @@
+import asyncio
+import uuid
+import logging
+from contextlib import asynccontextmanager
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
+from config.settings import settings
+from database.connection import init_db
+from websocket.manager import manager
+
+# ── New Architecture Imports ────────────────────────────────────────
+from core.event_bus import event_bus, EventType, Event
+from engines.market_session import market_session
+from workers.market_worker import market_data_worker
+from workers.order_worker import order_execution_worker
+from workers.algo_worker import algo_strategy_worker
+from workers.portfolio_worker import portfolio_recalc_worker
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # ── Startup ─────────────────────────────────────────────────────
+    logger.info("Starting AlphaSync...")
+    await init_db()
+
+    # Start the Event Bus dispatcher (must be first)
+    background_tasks = [
+        asyncio.create_task(event_bus.run()),
+    ]
+
+    # Wire event-driven workers (subscribe BEFORE starting emitters)
+    event_bus.subscribe(EventType.ORDER_FILLED, portfolio_recalc_worker.on_order_filled)
+
+    # Wire WebSocket manager as event listener for real-time updates
+    event_bus.subscribe(EventType.PRICE_UPDATED, manager.on_price_event)
+    event_bus.subscribe(EventType.ORDER_FILLED, manager.on_order_event)
+    event_bus.subscribe(EventType.PORTFOLIO_UPDATED, manager.on_portfolio_event)
+    event_bus.subscribe(EventType.ALGO_TRADE, manager.on_algo_event)
+    event_bus.subscribe(EventType.ALGO_SIGNAL, manager.on_algo_event)
+
+    # Start background workers
+    background_tasks.extend([
+        asyncio.create_task(market_data_worker.run()),
+        asyncio.create_task(order_execution_worker.run()),
+        asyncio.create_task(algo_strategy_worker.run()),
+    ])
+
+    # Keep legacy price streaming for backward compat during migration
+    streaming_task = asyncio.create_task(manager.start_price_streaming())
+    background_tasks.append(streaming_task)
+
+    # Emit system startup event
+    await event_bus.emit(Event(
+        type=EventType.SYSTEM_STARTUP,
+        data={"workers": ["event_bus", "market_data", "order_execution", "algo_strategy"]},
+        source="main",
+    ))
+
+    logger.info(
+        f"AlphaSync started | Workers: 4 | Market Session: {market_session.get_current_state().value} | "
+        f"Simulation Mode: {market_session.simulation_mode}"
+    )
+    yield
+
+    # ── Shutdown ────────────────────────────────────────────────────
+    logger.info("Shutting down AlphaSync...")
+    await event_bus.emit(Event(type=EventType.SYSTEM_SHUTDOWN, source="main"))
+
+    # Stop workers gracefully
+    await market_data_worker.stop()
+    await order_execution_worker.stop()
+    await algo_strategy_worker.stop()
+    await event_bus.stop()
+
+    # Cancel all background tasks
+    for task in background_tasks:
+        task.cancel()
+
+    logger.info("AlphaSync shut down")
+
+
+app = FastAPI(
+    title=settings.APP_NAME,
+    version=settings.APP_VERSION,
+    description="Professional Indian Stock Market Simulation Trading Platform",
+    lifespan=lifespan,
+)
+
+# CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.CORS_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Import and include routers
+from routes.auth import router as auth_router
+from routes.market import router as market_router
+from routes.orders import router as orders_router
+from routes.portfolio import router as portfolio_router
+from routes.watchlist import router as watchlist_router
+from routes.algo import router as algo_router
+from routes.user import router as user_router
+
+app.include_router(auth_router)
+app.include_router(market_router)
+app.include_router(orders_router)
+app.include_router(portfolio_router)
+app.include_router(watchlist_router)
+app.include_router(algo_router)
+app.include_router(user_router)
+
+
+@app.get("/")
+async def root():
+    return {
+        "name": settings.APP_NAME,
+        "version": settings.APP_VERSION,
+        "status": "running",
+    }
+
+
+@app.get("/api/health")
+async def health():
+    """Enhanced health endpoint with worker and engine status."""
+    return {
+        "status": "healthy",
+        "market_session": market_session.get_session_info(),
+        "event_bus": event_bus.get_stats(),
+        "workers": {
+            "market_data": market_data_worker.get_symbols(),
+            "order_execution": order_execution_worker.get_stats(),
+            "algo_strategy": algo_strategy_worker.get_stats(),
+            "portfolio_recalc": portfolio_recalc_worker.get_stats(),
+        },
+    }
+
+
+@app.websocket("/ws/{client_id}")
+async def websocket_endpoint(websocket: WebSocket, client_id: str = None):
+    connection_id = client_id or str(uuid.uuid4())
+    await manager.connect(websocket, connection_id)
+    try:
+        while True:
+            data = await websocket.receive_text()
+            await manager.handle_message(connection_id, data)
+    except WebSocketDisconnect:
+        manager.disconnect(connection_id)
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+
