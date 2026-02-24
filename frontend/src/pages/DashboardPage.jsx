@@ -52,9 +52,13 @@ export default function DashboardPage() {
             </div>
 
             {/* Portfolio Stats */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                 <div className="stat-card">
-                    <span className="text-xs text-gray-500 uppercase tracking-wider">Available Capital</span>
+                    <span className="text-xs text-gray-500 uppercase tracking-wider">Total Capital</span>
+                    <span className="text-xl font-bold text-heading font-mono">{fmt((portfolio?.available_capital || 0) + (portfolio?.current_value || 0))}</span>
+                </div>
+                <div className="stat-card">
+                    <span className="text-xs text-gray-500 uppercase tracking-wider">Available Cash</span>
                     <span className="text-xl font-bold text-heading font-mono">{fmt(portfolio?.available_capital)}</span>
                 </div>
                 <div className="stat-card">

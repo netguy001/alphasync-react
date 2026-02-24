@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import api from '../services/api';
@@ -9,6 +9,7 @@ export default function Header({ onMenuToggle, sidebarCollapsed }) {
     const { user } = useAuth();
     const { theme, toggleTheme } = useTheme();
     const navigate = useNavigate();
+    const location = useLocation();
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
     const [showResults, setShowResults] = useState(false);
@@ -43,11 +44,20 @@ export default function Header({ onMenuToggle, sidebarCollapsed }) {
         return () => clearTimeout(timeout);
     }, [searchQuery]);
 
-    // Close search on outside click
+    // Reset search on route change
+    useEffect(() => {
+        setSearchQuery('');
+        setSearchResults([]);
+        setShowResults(false);
+    }, [location.pathname]);
+
+    // Close search on outside click (also clears query)
     useEffect(() => {
         const handleClick = (e) => {
             if (searchRef.current && !searchRef.current.contains(e.target)) {
                 setShowResults(false);
+                setSearchQuery('');
+                setSearchResults([]);
             }
         };
         document.addEventListener('mousedown', handleClick);
@@ -71,7 +81,17 @@ export default function Header({ onMenuToggle, sidebarCollapsed }) {
 
     return (
         <header className="h-14 bg-surface-900/80 backdrop-blur-xl border-b border-edge/5
-      flex items-center justify-between px-4 lg:px-6 sticky top-0 z-30">
+      flex items-center justify-between px-4 lg:px-6 sticky top-0 z-30 relative">
+
+            {/* Centered Simulation Mode Badge */}
+            <div className="absolute left-1/2 -translate-x-1/2 hidden md:block pointer-events-none">
+                <div
+                    className="bg-amber-100 text-amber-800 border border-amber-300 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide pointer-events-auto cursor-default"
+                    title="You are trading with virtual money. No real funds are involved."
+                >
+                    Simulation Mode
+                </div>
+            </div>
 
             <div className="flex items-center gap-4">
                 <button
@@ -90,6 +110,7 @@ export default function Header({ onMenuToggle, sidebarCollapsed }) {
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         onFocus={() => { if (searchResults.length > 0) setShowResults(true); }}
+                        onKeyDown={(e) => { if (e.key === 'Escape') { setSearchQuery(''); setSearchResults([]); setShowResults(false); } }}
                         placeholder="Search stocks... (e.g. RELIANCE, TCS)"
                         className="bg-surface-800/60 border border-edge/5 rounded-lg pl-10 pr-4 py-2 text-sm
               text-heading placeholder-gray-500 focus:outline-none focus:border-primary-500/30

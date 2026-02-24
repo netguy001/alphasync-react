@@ -9,6 +9,7 @@ export default function TradingTerminalPage() {
     const [searchParams] = useSearchParams();
     const { theme } = useTheme();
     const initialSymbol = searchParams.get('symbol') || 'RELIANCE.NS';
+    const initialAction = (searchParams.get('action') || 'buy').toUpperCase();
     const [selectedSymbol, setSelectedSymbol] = useState(initialSymbol);
     const [quote, setQuote] = useState(null);
     const [candles, setCandles] = useState([]);
@@ -17,7 +18,7 @@ export default function TradingTerminalPage() {
     const [watchlistPrices, setWatchlistPrices] = useState({});
     const [orders, setOrders] = useState([]);
     const [holdings, setHoldings] = useState([]);
-    const [orderForm, setOrderForm] = useState({ side: 'BUY', type: 'MARKET', quantity: 1, price: '', triggerPrice: '' });
+    const [orderForm, setOrderForm] = useState({ side: initialAction === 'SELL' ? 'SELL' : 'BUY', type: 'MARKET', quantity: 1, price: '', triggerPrice: '' });
     const [chartPeriod, setChartPeriod] = useState('3mo');
     const [loading, setLoading] = useState(false);
     const [popularStocks, setPopularStocks] = useState([]);
@@ -118,10 +119,21 @@ export default function TradingTerminalPage() {
     }, [selectedSymbol, fetchQuote]);
 
     // Fetch candle data
+    const periodConfig = {
+        '1d': { period: '1d', interval: '5m' },
+        '1w': { period: '5d', interval: '1h' },
+        '1mo': { period: '1mo', interval: '1d' },
+        '3mo': { period: '3mo', interval: '1d' },
+        '6mo': { period: '6mo', interval: '1d' },
+        '1y': { period: '1y', interval: '1d' },
+        '5y': { period: '5y', interval: '1d' },
+    };
+
     useEffect(() => {
         const fetchCandles = async () => {
+            const cfg = periodConfig[chartPeriod] || { period: chartPeriod, interval: '1d' };
             try {
-                const res = await api.get(`/market/history/${selectedSymbol}?period=${chartPeriod}&interval=1d`);
+                const res = await api.get(`/market/history/${selectedSymbol}?period=${cfg.period}&interval=${cfg.interval}`);
                 setCandles(res.data.candles || []);
             } catch { /* ignore */ }
         };
@@ -339,7 +351,7 @@ export default function TradingTerminalPage() {
                         </div>
                     </div>
                     <div className="flex items-center gap-1">
-                        {['1mo', '3mo', '6mo', '1y', '5y'].map(p => (
+                        {['1d', '1w', '1mo', '3mo', '6mo', '1y', '5y'].map(p => (
                             <button key={p} onClick={() => setChartPeriod(p)}
                                 className={`px-2.5 py-1 text-xs font-medium rounded transition-colors ${chartPeriod === p ? 'bg-primary-500/20 text-primary-400' : 'text-gray-500 hover:text-heading hover:bg-overlay/5'}`}>
                                 {p.toUpperCase()}
@@ -370,11 +382,17 @@ export default function TradingTerminalPage() {
                     {/* Buy/Sell Toggle */}
                     <div className="flex rounded-lg overflow-hidden border border-edge/10">
                         <button type="button" onClick={() => setOrderForm(f => ({ ...f, side: 'BUY' }))}
-                            className={`flex-1 py-2.5 text-sm font-bold transition-all ${orderForm.side === 'BUY' ? 'bg-buy text-white' : 'text-gray-500 hover:text-heading'}`}>
+                            className={`flex-1 py-2.5 text-sm font-bold transition-all ${orderForm.side === 'BUY'
+                                    ? 'bg-green-500 text-white'
+                                    : 'border-2 border-green-500 text-green-500 bg-white hover:bg-green-50'
+                                }`}>
                             BUY
                         </button>
                         <button type="button" onClick={() => setOrderForm(f => ({ ...f, side: 'SELL' }))}
-                            className={`flex-1 py-2.5 text-sm font-bold transition-all ${orderForm.side === 'SELL' ? 'bg-sell text-white' : 'text-gray-500 hover:text-heading'}`}>
+                            className={`flex-1 py-2.5 text-sm font-bold transition-all ${orderForm.side === 'SELL'
+                                    ? 'bg-red-500 text-white'
+                                    : 'border-2 border-red-500 text-red-500 bg-white hover:bg-red-50'
+                                }`}>
                             SELL
                         </button>
                     </div>
@@ -390,6 +408,17 @@ export default function TradingTerminalPage() {
                         </select>
                     </div>
 
+                    {/* Limit Price — shown between Order Type and Quantity */}
+                    {(orderForm.type === 'LIMIT' || orderForm.type === 'SL' || orderForm.type === 'SL-M') && (
+                        <div className="animate-slide-up">
+                            <label className="label-text">Limit Price (₹)</label>
+                            <input type="number" min="0" step="0.05" value={orderForm.price}
+                                onChange={e => setOrderForm(f => ({ ...f, price: e.target.value }))}
+                                placeholder={quote?.price ? Number(quote.price).toFixed(2) : '0.00'}
+                                className="input-field font-mono" required />
+                        </div>
+                    )}
+
                     {/* Quantity */}
                     <div>
                         <label className="label-text">Quantity</label>
@@ -403,16 +432,7 @@ export default function TradingTerminalPage() {
                         </div>
                     </div>
 
-                    {/* Limit Price */}
-                    {orderForm.type === 'LIMIT' && (
-                        <div className="animate-slide-up">
-                            <label className="label-text">Limit Price (₹)</label>
-                            <input type="number" step="0.05" value={orderForm.price}
-                                onChange={e => setOrderForm(f => ({ ...f, price: e.target.value }))}
-                                placeholder={quote?.price ? Number(quote.price).toFixed(2) : '0.00'}
-                                className="input-field font-mono" required />
-                        </div>
-                    )}
+
 
                     {/* Trigger Price */}
                     {orderForm.type === 'STOP_LOSS' && (

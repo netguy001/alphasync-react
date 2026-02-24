@@ -173,8 +173,13 @@ export default function SettingsPage() {
                     </div>
                 ) : (
                     <div>
+                        {!twoFA.enabled && (
+                            <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 text-sm p-3 rounded-lg mb-4">
+                                Your account is not protected by 2FA. Enable it to secure your trading account.
+                            </div>
+                        )}
                         <p className="text-sm text-gray-400 mb-4">Add an extra layer of security to your account</p>
-                        <button onClick={setup2FA} className="btn-secondary text-sm inline-flex items-center gap-2">
+                        <button onClick={setup2FA} className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2 rounded-lg flex items-center gap-2 cursor-pointer">
                             <HiOutlineShieldCheck className="w-4 h-4" /> Setup 2FA
                         </button>
                     </div>

@@ -108,8 +108,7 @@ export default function LoginPage() {
                     <div className="mt-8 flex justify-center gap-6">
                         {['NIFTY 50', 'SENSEX', 'BANK NIFTY'].map(idx => (
                             <div key={idx} className="glass-card px-4 py-3">
-                                <div className="text-xs text-gray-500 mb-1">{idx}</div>
-                                <div className="text-sm font-mono text-profit">▲ 0.42%</div>
+                                <div className="text-xs text-gray-500">{idx}</div>
                             </div>
                         ))}
                     </div>

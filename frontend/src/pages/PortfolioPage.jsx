@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { HiTrendingUp, HiTrendingDown, HiCurrencyRupee } from 'react-icons/hi';
 
 export default function PortfolioPage() {
+    const navigate = useNavigate();
     const [portfolio, setPortfolio] = useState(null);
     const [holdings, setHoldings] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -90,6 +92,7 @@ export default function PortfolioPage() {
                                     <th className="text-right py-3 font-medium">Current</th>
                                     <th className="text-right py-3 font-medium">P&L</th>
                                     <th className="text-right py-3 font-medium">P&L %</th>
+                                    <th className="text-right py-3 font-medium">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -111,6 +114,22 @@ export default function PortfolioPage() {
                                             <div className="flex items-center justify-end gap-1">
                                                 {h.pnl_percent >= 0 ? <HiTrendingUp className="w-3 h-3" /> : <HiTrendingDown className="w-3 h-3" />}
                                                 {h.pnl_percent >= 0 ? '+' : ''}{Number(h.pnl_percent).toFixed(2)}%
+                                            </div>
+                                        </td>
+                                        <td className="py-3 text-right">
+                                            <div className="flex items-center justify-end gap-1.5">
+                                                <button
+                                                    onClick={() => navigate(`/terminal?symbol=${encodeURIComponent(h.symbol)}&action=buy`)}
+                                                    className="text-xs bg-green-50 text-green-700 border border-green-200 px-2 py-1 rounded hover:bg-green-100"
+                                                >
+                                                    Add
+                                                </button>
+                                                <button
+                                                    onClick={() => navigate(`/terminal?symbol=${encodeURIComponent(h.symbol)}&action=sell`)}
+                                                    className="text-xs bg-red-50 text-red-700 border border-red-200 px-2 py-1 rounded hover:bg-red-100"
+                                                >
+                                                    Sell
+                                                </button>
                                             </div>
                                         </td>
                                     </tr>

@@ -170,6 +170,11 @@ export default function AlgoTradingPage() {
                         <HiLightningBolt className="w-12 h-12 mx-auto mb-3 text-gray-600" />
                         <p className="text-lg font-medium text-gray-500">No strategies yet</p>
                         <p className="text-sm text-gray-600 mt-1">Create your first algo trading strategy to get started</p>
+                        <p className="text-sm text-gray-600 mt-3 max-w-md mx-auto">Define entry/exit conditions using technical indicators. Strategies run automatically during market hours.</p>
+                        <div className="flex items-center justify-center gap-2 mt-4 flex-wrap">
+                            <span className="bg-gray-100 text-gray-600 text-xs px-3 py-1 rounded-full">Moving Average Crossover</span>
+                            <span className="bg-gray-100 text-gray-600 text-xs px-3 py-1 rounded-full">RSI Oversold Bounce</span>
+                        </div>
                     </div>
                 )}
             </div>
