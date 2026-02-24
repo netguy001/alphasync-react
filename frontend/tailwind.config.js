@@ -8,6 +8,7 @@ export default {
     theme: {
         extend: {
             colors: {
+                // ── Existing brand primary (indigo) ──────────────────────────
                 primary: {
                     50: '#eef2ff',
                     100: '#e0e7ff',
@@ -20,6 +21,7 @@ export default {
                     800: '#3730a3',
                     900: '#312e81',
                 },
+                // ── CSS-var-backed surface / text tokens ──────────────────────
                 surface: {
                     50: 'rgb(var(--surface-50) / <alpha-value>)',
                     100: 'rgb(var(--surface-100) / <alpha-value>)',
@@ -45,23 +47,68 @@ export default {
                     emerald: '#34d399',
                     amber: '#fbbf24',
                 },
+                // ── Semantic trading colors ───────────────────────────────────
                 profit: '#22c55e',
                 loss: '#ef4444',
                 buy: '#22c55e',
                 sell: '#ef4444',
+                // ── Trading design system tokens ─────────────────────────────
+                brand: {
+                    primary: '#2196F3',
+                    dim: '#1565C0',
+                    glow: 'rgba(33,150,243,0.15)',
+                },
+                bull: {
+                    DEFAULT: '#26A69A',
+                    dim: '#1A7A70',
+                    glow: 'rgba(38,166,154,0.2)',
+                },
+                bear: {
+                    DEFAULT: '#EF5350',
+                    dim: '#B71C1C',
+                    glow: 'rgba(239,83,80,0.2)',
+                },
+                text: {
+                    primary: '#E8EAF0',
+                    secondary: '#9BA3AF',
+                    muted: '#4B5563',
+                    inverse: '#0B0E11',
+                },
             },
             fontFamily: {
                 sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
                 mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
             },
+            // ── Trading-specific font sizes ───────────────────────────────────
+            fontSize: {
+                'price-lg': ['1.5rem', { lineHeight: '1', letterSpacing: '-0.02em', fontWeight: '600' }],
+                'price-sm': ['0.875rem', { lineHeight: '1', letterSpacing: '-0.01em', fontWeight: '500' }],
+                'label': ['0.6875rem', { lineHeight: '1.2', letterSpacing: '0.04em', fontWeight: '500' }],
+            },
+            // ── Shadows ───────────────────────────────────────────────────────
+            boxShadow: {
+                'card': '0 1px 3px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3)',
+                'panel': '0 4px 24px rgba(0,0,0,0.5)',
+                'bull': '0 0 12px rgba(38,166,154,0.3)',
+                'bear': '0 0 12px rgba(239,83,80,0.3)',
+                'focused': '0 0 0 2px rgba(33,150,243,0.5)',
+            },
+            // ── Animations ────────────────────────────────────────────────────
             animation: {
+                // existing
                 'fade-in': 'fadeIn 0.3s ease-out',
                 'slide-up': 'slideUp 0.3s ease-out',
                 'slide-in-right': 'slideInRight 0.3s ease-out',
                 'pulse-subtle': 'pulseSubtle 2s ease-in-out infinite',
                 'glow': 'glow 2s ease-in-out infinite alternate',
+                // new trading-grade
+                'price-up': 'priceFlash 600ms ease-out',
+                'price-down': 'priceFlashRed 600ms ease-out',
+                'skeleton': 'shimmer 1.5s infinite',
+                'slide-in': 'slideIn 200ms ease-out',
             },
             keyframes: {
+                // existing
                 fadeIn: {
                     '0%': { opacity: '0' },
                     '100%': { opacity: '1' },
@@ -81,6 +128,23 @@ export default {
                 glow: {
                     '0%': { boxShadow: '0 0 5px rgba(99, 102, 241, 0.2)' },
                     '100%': { boxShadow: '0 0 20px rgba(99, 102, 241, 0.4)' },
+                },
+                // new
+                priceFlash: {
+                    '0%': { backgroundColor: 'rgba(38,166,154,0.35)' },
+                    '100%': { backgroundColor: 'transparent' },
+                },
+                priceFlashRed: {
+                    '0%': { backgroundColor: 'rgba(239,83,80,0.35)' },
+                    '100%': { backgroundColor: 'transparent' },
+                },
+                shimmer: {
+                    '0%': { backgroundPosition: '-200% 0' },
+                    '100%': { backgroundPosition: '200% 0' },
+                },
+                slideIn: {
+                    '0%': { transform: 'translateY(-4px)', opacity: '0' },
+                    '100%': { transform: 'translateY(0)', opacity: '1' },
                 },
             },
         },

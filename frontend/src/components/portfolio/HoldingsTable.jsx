@@ -1,0 +1,214 @@
+import { useState, useMemo, memo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { cn } from '../../utils/cn';
+import { formatCurrency, formatPrice, formatPercent, pnlColorClass } from '../../utils/formatters';
+import Skeleton from '../ui/Skeleton';
+import Badge from '../ui/Badge';
+import { HiTrendingUp, HiTrendingDown, HiCurrencyRupee, HiDownload, HiSelector, HiSortAscending, HiSortDescending } from 'react-icons/hi';
+
+/** Export holdings data to a CSV file */
+function exportToCSV(holdings) {
+    const headers = ['Symbol', 'Company', 'Qty', 'Avg Price', 'LTP', 'Invested', 'Current Value', 'P&L', 'P&L %'];
+    const rows = holdings.map((h) => [
+        h.symbol?.replace('.NS', ''),
+        h.company_name || '',
+        h.quantity,
+        Number(h.avg_price).toFixed(2),
+        Number(h.current_price).toFixed(2),
+        Number(h.invested_value).toFixed(2),
+        Number(h.current_value).toFixed(2),
+        Number(h.pnl).toFixed(2),
+        Number(h.pnl_percent).toFixed(2),
+    ]);
+    const csv = [headers, ...rows].map((r) => r.map(String).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `alphasync_holdings_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+const SORT_KEYS = { symbol: 'symbol', pnl: 'pnl', pnl_percent: 'pnl_percent', current_value: 'current_value' };
+
+/**
+ * Sortable, exportable holdings table with P&L flash animations.
+ *
+ * @param {{ holdings: Array, isLoading: boolean }} props
+ */
+const HoldingsTable = memo(function HoldingsTable({ holdings = [], isLoading = false }) {
+    const navigate = useNavigate();
+    const [sortKey, setSortKey] = useState('pnl_percent');
+    const [sortDir, setSortDir] = useState('desc');
+
+    const handleSort = (key) => {
+        if (sortKey === key) setSortDir((d) => d === 'asc' ? 'desc' : 'asc');
+        else { setSortKey(key); setSortDir('desc'); }
+    };
+
+    const sorted = useMemo(() => {
+        return [...holdings].sort((a, b) => {
+            const av = a[sortKey] ?? 0;
+            const bv = b[sortKey] ?? 0;
+            const cmp = typeof av === 'string' ? av.localeCompare(bv) : av - bv;
+            return sortDir === 'asc' ? cmp : -cmp;
+        });
+    }, [holdings, sortKey, sortDir]);
+
+    // Aggregate totals row
+    const totals = useMemo(() => ({
+        invested: holdings.reduce((s, h) => s + (h.invested_value ?? 0), 0),
+        current: holdings.reduce((s, h) => s + (h.current_value ?? 0), 0),
+        pnl: holdings.reduce((s, h) => s + (h.pnl ?? 0), 0),
+    }), [holdings]);
+
+    const SortIcon = ({ col }) => {
+        if (sortKey !== col) return <HiSelector className="w-3 h-3 opacity-30" />;
+        return sortDir === 'asc'
+            ? <HiSortAscending className="w-3 h-3 text-primary-400" />
+            : <HiSortDescending className="w-3 h-3 text-primary-400" />;
+    };
+
+    if (isLoading) {
+        return (
+            <div className="glass-card p-5">
+                <div className="h-5 w-32 bg-surface-700 rounded animate-skeleton mb-4" />
+                {Array.from({ length: 5 }, (_, i) => <Skeleton key={i} variant="table-row" />)}
+            </div>
+        );
+    }
+
+    return (
+        <div className="glass-card p-5">
+            <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                    Holdings ({holdings.length})
+                </h2>
+                {holdings.length > 0 && (
+                    <button
+                        onClick={() => exportToCSV(holdings)}
+                        className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-300 transition-colors"
+                        title="Export to CSV"
+                    >
+                        <HiDownload className="w-3.5 h-3.5" />
+                        Export
+                    </button>
+                )}
+            </div>
+
+            {holdings.length > 0 ? (
+                <div className="overflow-x-auto">
+                    <table className="w-full text-sm min-w-[700px]">
+                        <thead>
+                            <tr className="text-gray-500 text-xs uppercase border-b border-edge/5">
+                                <th
+                                    className="text-left py-3 font-medium cursor-pointer hover:text-gray-300 select-none"
+                                    onClick={() => handleSort('symbol')}
+                                >
+                                    <span className="flex items-center gap-1">Symbol <SortIcon col="symbol" /></span>
+                                </th>
+                                <th className="text-right py-3 font-medium">Qty</th>
+                                <th className="text-right py-3 font-medium">Avg</th>
+                                <th className="text-right py-3 font-medium">LTP</th>
+                                <th className="text-right py-3 font-medium">Invested</th>
+                                <th
+                                    className="text-right py-3 font-medium cursor-pointer hover:text-gray-300 select-none"
+                                    onClick={() => handleSort('current_value')}
+                                >
+                                    <span className="flex items-center justify-end gap-1">Current <SortIcon col="current_value" /></span>
+                                </th>
+                                <th
+                                    className="text-right py-3 font-medium cursor-pointer hover:text-gray-300 select-none"
+                                    onClick={() => handleSort('pnl')}
+                                >
+                                    <span className="flex items-center justify-end gap-1">P&L <SortIcon col="pnl" /></span>
+                                </th>
+                                <th
+                                    className="text-right py-3 font-medium cursor-pointer hover:text-gray-300 select-none"
+                                    onClick={() => handleSort('pnl_percent')}
+                                >
+                                    <span className="flex items-center justify-end gap-1">P&L % <SortIcon col="pnl_percent" /></span>
+                                </th>
+                                <th className="text-right py-3 font-medium">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {sorted.map((h, i) => {
+                                const pnlPos = (h.pnl ?? 0) >= 0;
+                                return (
+                                    <tr
+                                        key={h.symbol || i}
+                                        className="border-b border-edge/[0.025] hover:bg-overlay/[0.025] transition-colors group"
+                                    >
+                                        <td className="py-3">
+                                            <div className="font-semibold text-heading">
+                                                {h.symbol?.replace('.NS', '')}
+                                            </div>
+                                            <div className="text-xs text-gray-600">{h.company_name || h.exchange}</div>
+                                        </td>
+                                        <td className="py-3 text-right font-mono text-gray-300">{h.quantity}</td>
+                                        <td className="py-3 text-right font-mono text-gray-300">{formatPrice(h.avg_price)}</td>
+                                        <td className="py-3 text-right font-mono text-heading font-semibold">{formatPrice(h.current_price)}</td>
+                                        <td className="py-3 text-right font-mono text-gray-300">{formatCurrency(h.invested_value)}</td>
+                                        <td className="py-3 text-right font-mono text-heading">{formatCurrency(h.current_value)}</td>
+                                        <td className={cn('py-3 text-right font-mono font-semibold', pnlColorClass(h.pnl ?? 0))}>
+                                            {pnlPos ? '+' : ''}{formatCurrency(h.pnl)}
+                                        </td>
+                                        <td className={cn('py-3 text-right font-mono font-semibold', pnlColorClass(h.pnl_percent ?? 0))}>
+                                            <div className="flex items-center justify-end gap-1">
+                                                {pnlPos
+                                                    ? <HiTrendingUp className="w-3 h-3" />
+                                                    : <HiTrendingDown className="w-3 h-3" />}
+                                                {formatPercent(h.pnl_percent, 2)}
+                                            </div>
+                                        </td>
+                                        <td className="py-3 text-right">
+                                            <div className="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button
+                                                    onClick={() => navigate(`/terminal?symbol=${encodeURIComponent(h.symbol)}&action=buy`)}
+                                                    className="text-xs bg-bull/10 text-bull border border-bull/20 px-2 py-1 rounded hover:bg-bull/20 transition-colors"
+                                                >
+                                                    Buy
+                                                </button>
+                                                <button
+                                                    onClick={() => navigate(`/terminal?symbol=${encodeURIComponent(h.symbol)}&action=sell`)}
+                                                    className="text-xs bg-bear/10 text-bear border border-bear/20 px-2 py-1 rounded hover:bg-bear/20 transition-colors"
+                                                >
+                                                    Sell
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                        {/* Pinned totals row */}
+                        <tfoot>
+                            <tr className="border-t-2 border-edge/10 text-xs font-semibold">
+                                <td colSpan={4} className="pt-3 text-gray-500">Total</td>
+                                <td className="pt-3 text-right font-mono text-gray-300">{formatCurrency(totals.invested)}</td>
+                                <td className="pt-3 text-right font-mono text-heading">{formatCurrency(totals.current)}</td>
+                                <td className={cn('pt-3 text-right font-mono', pnlColorClass(totals.pnl))}>
+                                    {totals.pnl >= 0 ? '+' : ''}{formatCurrency(totals.pnl)}
+                                </td>
+                                <td className={cn('pt-3 text-right font-mono', pnlColorClass(totals.pnl))}>
+                                    {formatPercent(totals.invested > 0 ? (totals.pnl / totals.invested) * 100 : 0)}
+                                </td>
+                                <td />
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            ) : (
+                <div className="text-center py-16 text-gray-600">
+                    <HiCurrencyRupee className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                    <p className="text-lg font-medium text-gray-500">No holdings yet</p>
+                    <p className="text-sm text-gray-600 mt-1">Visit the Trading Terminal to place your first trade</p>
+                </div>
+            )}
+        </div>
+    );
+});
+
+export default HoldingsTable;

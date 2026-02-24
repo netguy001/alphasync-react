@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import { HiTrendingUp, HiTrendingDown, HiCurrencyRupee, HiChartBar, HiArrowRight } from 'react-icons/hi';
+import { formatCurrency, formatPrice, formatPercent, pnlColorClass } from '../utils/formatters';
+import { Skeleton } from '../components/ui';
 
 export default function DashboardPage() {
     const { user } = useAuth();
@@ -31,14 +33,16 @@ export default function DashboardPage() {
         load();
     }, []);
 
-    const fmt = (v) => v != null ? `₹${Number(v).toLocaleString('en-IN', { maximumFractionDigits: 2 })}` : '—';
-    const pnlColor = (v) => v >= 0 ? 'text-profit' : 'text-loss';
-    const pnlIcon = (v) => v >= 0 ? <HiTrendingUp className="w-4 h-4" /> : <HiTrendingDown className="w-4 h-4" />;
+    const pnlIcon = (v) => (v ?? 0) >= 0 ? <HiTrendingUp className="w-4 h-4" /> : <HiTrendingDown className="w-4 h-4" />;
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center h-[60vh]">
-                <div className="w-10 h-10 border-2 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
+            <div className="p-4 lg:p-6 space-y-6">
+                <Skeleton variant="text" className="h-8 w-48" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                    <Skeleton variant="stat-card" count={5} />
+                </div>
+                <Skeleton variant="table-row" count={4} />
             </div>
         );
     }
@@ -55,25 +59,25 @@ export default function DashboardPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                 <div className="stat-card">
                     <span className="text-xs text-gray-500 uppercase tracking-wider">Total Capital</span>
-                    <span className="text-xl font-bold text-heading font-mono">{fmt((portfolio?.available_capital || 0) + (portfolio?.current_value || 0))}</span>
+                    <span className="text-xl font-bold text-heading font-mono">{formatCurrency((portfolio?.available_capital || 0) + (portfolio?.current_value || 0))}</span>
                 </div>
                 <div className="stat-card">
                     <span className="text-xs text-gray-500 uppercase tracking-wider">Available Cash</span>
-                    <span className="text-xl font-bold text-heading font-mono">{fmt(portfolio?.available_capital)}</span>
+                    <span className="text-xl font-bold text-heading font-mono">{formatCurrency(portfolio?.available_capital)}</span>
                 </div>
                 <div className="stat-card">
                     <span className="text-xs text-gray-500 uppercase tracking-wider">Total Invested</span>
-                    <span className="text-xl font-bold text-heading font-mono">{fmt(portfolio?.total_invested)}</span>
+                    <span className="text-xl font-bold text-heading font-mono">{formatCurrency(portfolio?.total_invested)}</span>
                 </div>
                 <div className="stat-card">
                     <span className="text-xs text-gray-500 uppercase tracking-wider">Current Value</span>
-                    <span className="text-xl font-bold text-heading font-mono">{fmt(portfolio?.current_value)}</span>
+                    <span className="text-xl font-bold text-heading font-mono">{formatCurrency(portfolio?.current_value)}</span>
                 </div>
                 <div className="stat-card">
                     <span className="text-xs text-gray-500 uppercase tracking-wider">Total P&L</span>
                     <div className="flex items-center gap-2">
-                        <span className={`text-xl font-bold font-mono ${pnlColor(portfolio?.total_pnl || 0)}`}>
-                            {fmt(portfolio?.total_pnl)}
+                        <span className={`text-xl font-bold font-mono ${pnlColorClass(portfolio?.total_pnl || 0)}`}>
+                            {formatCurrency(portfolio?.total_pnl)}
                         </span>
                         {pnlIcon(portfolio?.total_pnl || 0)}
                     </div>
@@ -92,11 +96,11 @@ export default function DashboardPage() {
                                     <div className="font-semibold text-heading text-sm">{idx.name}</div>
                                     <div className="text-lg font-mono text-heading">{Number(idx.price).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>
                                 </div>
-                                <div className={`text-right ${pnlColor(idx.change)}`}>
+                                <div className={`text-right ${pnlColorClass(idx.change)}`}>
                                     <div className="flex items-center gap-1 text-sm font-mono">
-                                        {pnlIcon(idx.change)} {idx.change > 0 ? '+' : ''}{Number(idx.change).toFixed(2)}
+                                        {pnlIcon(idx.change)} {idx.change > 0 ? '+' : ''}{formatPrice(idx.change)}
                                     </div>
-                                    <div className="text-xs font-mono">({idx.change_percent > 0 ? '+' : ''}{Number(idx.change_percent).toFixed(2)}%)</div>
+                                    <div className="text-xs font-mono">({formatPercent(idx.change_percent)})</div>
                                 </div>
                             </div>
                         )) : (
@@ -142,12 +146,12 @@ export default function DashboardPage() {
                                 <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-surface-900/50">
                                     <div>
                                         <div className="text-sm font-semibold text-heading">{h.symbol?.replace('.NS', '')}</div>
-                                        <div className="text-xs text-gray-500">{h.quantity} @ {fmt(h.avg_price)}</div>
+                                        <div className="text-xs text-gray-500">{h.quantity} @ {formatCurrency(h.avg_price)}</div>
                                     </div>
                                     <div className="text-right">
-                                        <div className="text-sm font-mono text-heading">{fmt(h.current_value)}</div>
-                                        <div className={`text-xs font-mono ${pnlColor(h.pnl)}`}>
-                                            {h.pnl >= 0 ? '+' : ''}{fmt(h.pnl)} ({h.pnl_percent >= 0 ? '+' : ''}{h.pnl_percent?.toFixed(2)}%)
+                                        <div className="text-sm font-mono text-heading">{formatCurrency(h.current_value)}</div>
+                                        <div className={`text-xs font-mono ${pnlColorClass(h.pnl)}`}>
+                                            {(h.pnl ?? 0) >= 0 ? '+' : ''}{formatCurrency(h.pnl)} ({formatPercent(h.pnl_percent)})
                                         </div>
                                     </div>
                                 </div>
@@ -181,7 +185,7 @@ export default function DashboardPage() {
                                         </div>
                                     </div>
                                     <div className="text-right">
-                                        <div className="text-sm font-mono text-heading">{fmt(o.filled_price || o.price)}</div>
+                                        <div className="text-sm font-mono text-heading">{formatCurrency(o.filled_price ?? o.price)}</div>
                                         <span className={`text-xs px-1.5 py-0.5 rounded ${o.status === 'FILLED' ? 'text-profit bg-profit/10' : 'text-amber-400 bg-amber-400/10'}`}>
                                             {o.status}
                                         </span>

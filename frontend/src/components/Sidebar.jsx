@@ -1,14 +1,7 @@
-import { NavLink, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import {
-    HiOutlineViewGrid,
-    HiOutlineChartBar,
-    HiOutlineBriefcase,
-    HiOutlineLightningBolt,
-    HiOutlineCog,
-    HiOutlineLogout,
-    HiChevronLeft,
-    HiChevronRight,
+// ⚠️  Deprecated — use components/layout/Sidebar instead.
+export { default } from './layout/Sidebar';
+
+HiChevronRight,
 } from 'react-icons/hi';
 
 const navItems = [
@@ -19,7 +12,7 @@ const navItems = [
     { to: '/settings', icon: HiOutlineCog, label: 'Settings' },
 ];
 
-export default function Sidebar({ collapsed, onToggle }) {
+function _LegacySidebar({ collapsed, onToggle }) {
     const { logout, user } = useAuth();
     const navigate = useNavigate();
 
