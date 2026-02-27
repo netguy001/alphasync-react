@@ -27,9 +27,7 @@ from config.settings import settings
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 security = HTTPBearer(auto_error=False)
 
-
 # --- Schemas ---
-
 
 class RegisterRequest(BaseModel):
     email: EmailStr
