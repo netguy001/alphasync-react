@@ -1,18 +1,21 @@
 // ─── TradingTerminalPage — refactored ────────────────────────────────────────
-// Layout: [Watchlist 260px] | [Chart + BottomTabs flex-1] | [OrderPanel 300px]
+// Layout: [Watchlist 200px] | [Chart + BottomTabs flex-1] | [OrderPanel 300px]
 // All data logic delegated to useMarketData, usePortfolioStore, and Zustand.
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useMarketStore } from '../store/useMarketStore';
 import { usePortfolioStore } from '../store/usePortfolioStore';
 import { useMarketData } from '../hooks/useMarketData';
 import TradingChart from '../components/trading/TradingChart';
+import { useZeroLossStore } from '../stores/useZeroLossStore';
 import Watchlist from '../components/trading/Watchlist';
 import OrderPanel from '../components/trading/OrderPanel';
+import { StrategyDock } from '../strategy/components';
+import { runEngine, getAvailableStrategies } from '../strategy';
 import ErrorBoundary from '../components/ErrorBoundary';
 import { cn } from '../utils/cn';
 import { formatPrice, formatPercent, pnlColorClass } from '../utils/formatters';
-import { CHART_PERIODS, DEFAULT_CHART_PERIOD, ORDER_STATUS_CLASS, DEFAULT_WATCHLIST_SYMBOLS } from '../utils/constants';
+import { CHART_PERIODS, DEFAULT_CHART_PERIOD, ORDER_STATUS_CLASS } from '../utils/constants';
 import api from '../services/api';
 
 // ── Bottom tabs: positions + order history ────────────────────────────────────
@@ -110,6 +113,8 @@ function BottomTabs({ holdings, orders }) {
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function TradingTerminalPage() {
+    // ZeroLoss backend confidence/direction for selected symbol
+    const zlConfidence = useZeroLossStore((s) => s.confidence[selectedSymbol] || null);
     const [searchParams] = useSearchParams();
     const initialSymbol = searchParams.get('symbol') || 'RELIANCE.NS';
     const initialAction = (searchParams.get('action') || 'buy').toUpperCase(); // eslint-disable-line no-unused-vars
@@ -120,6 +125,9 @@ export default function TradingTerminalPage() {
     const [watchlistItems, setWatchlistItems] = useState([]);
     const [watchlistPrices, setWatchlistPrices] = useState({});
     const [isTerminalFocused, setIsTerminalFocused] = useState(false);
+    const [strategyDockOpen, setStrategyDockOpen] = useState(false);
+    const [watchlistOpen, setWatchlistOpen] = useState(true);
+    const [bottomTabsOpen, setBottomTabsOpen] = useState(false);
 
     // Zustand stores
     const { holdings, orders, refreshPortfolio } = usePortfolioStore();
@@ -127,6 +135,19 @@ export default function TradingTerminalPage() {
 
     // Hook: quote + candles for the selected symbol
     const { quote, candles, isLoading: chartLoading, fetchCandles } = useMarketData(selectedSymbol);
+
+    // Compute trend data for chart overlay (must be after useMarketData)
+    const trendData = useMemo(() => {
+        if (!candles || candles.length === 0) return null;
+        const strategies = getAvailableStrategies();
+        const enabledIds = strategies.map((s) => s.id);
+        const result = runEngine(candles, enabledIds);
+        return {
+            overall: result.overall,
+            confidence: result.confidence,
+            weightedScore: result.weightedScore ?? 0,
+        };
+    }, [candles]);
 
 
     // Re-fetch candles when period or symbol changes
@@ -152,14 +173,7 @@ export default function TradingTerminalPage() {
                 } else {
                     const createRes = await api.post('/watchlist', { name: 'My Watchlist' });
                     setWatchlistId(createRes.data.id);
-                    const seeded = [];
-                    for (const sym of DEFAULT_WATCHLIST_SYMBOLS) {
-                        try {
-                            const r = await api.post(`/watchlist/${createRes.data.id}/items`, { symbol: sym });
-                            seeded.push(r.data);
-                        } catch { /* skip */ }
-                    }
-                    setWatchlistItems(seeded);
+                    setWatchlistItems([]);
                 }
             } catch { /* ignore */ }
         };
@@ -196,19 +210,36 @@ export default function TradingTerminalPage() {
             onBlur={() => setIsTerminalFocused(false)}
         >
             {/* ── LEFT: Watchlist ────────────────────────────────────────── */}
-            <div className="w-[260px] flex-shrink-0 hidden lg:flex flex-col">
-                <Watchlist
-                    watchlistId={watchlistId}
-                    items={watchlistItems}
-                    prices={watchlistPrices}
-                    selectedSymbol={selectedSymbol}
-                    isLoading={false}
-                    onSelectSymbol={handleSelectSymbol}
-                    onItemsChange={setWatchlistItems}
-                    onBuy={handleBuy}
-                    onSell={handleSell}
-                />
-            </div>
+            {watchlistOpen && (
+                <div className="w-[220px] flex-shrink-0 hidden lg:flex flex-col relative transition-all duration-300">
+                    <Watchlist
+                        watchlistId={watchlistId}
+                        items={watchlistItems}
+                        prices={watchlistPrices}
+                        selectedSymbol={selectedSymbol}
+                        isLoading={false}
+                        onSelectSymbol={handleSelectSymbol}
+                        onItemsChange={setWatchlistItems}
+                        onBuy={handleBuy}
+                        onSell={handleSell}
+                        onClose={() => setWatchlistOpen(false)}
+                    />
+                </div>
+            )}
+
+            {/* ── Open Watchlist toggle (when closed) ─────────────────── */}
+            {!watchlistOpen && (
+                <button
+                    onClick={() => setWatchlistOpen(true)}
+                    className="hidden lg:flex flex-shrink-0 flex-col items-center justify-center gap-2 w-10 h-full border-r border-edge/5 bg-surface-900/50 hover:bg-surface-800/70 text-gray-500 hover:text-primary-400 transition-all duration-200 group"
+                    title="Open watchlist"
+                >
+                    <svg className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M9 18l6-6-6-6" />
+                    </svg>
+                    <span className="text-[10px] font-bold uppercase tracking-widest [writing-mode:vertical-lr] rotate-180 mt-1 text-gray-400 group-hover:text-primary-400 transition-colors">Watchlist</span>
+                </button>
+            )}
 
             {/* ── CENTER: Chart + bottom tabs ────────────────────────────── */}
             <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
@@ -251,7 +282,7 @@ export default function TradingTerminalPage() {
                 </div>
 
                 {/* Chart — fills remaining height */}
-                <div className="flex-1 min-h-0">
+                <div className={cn('min-h-0 relative', bottomTabsOpen ? 'flex-1' : 'flex-[1_1_0%]')}>
                     <ErrorBoundary fallback="Chart failed to load. Please refresh.">
                         <TradingChart
                             candles={candles}
@@ -259,15 +290,43 @@ export default function TradingTerminalPage() {
                             onPeriodChange={setChartPeriod}
                             isLoading={chartLoading}
                             symbol={selectedSymbol}
+                            trendData={trendData}
+                            zeroLossTrend={zlConfidence}
                         />
                     </ErrorBoundary>
+
+                    {/* Strategy Dock toggle button */}
+                    <button
+                        onClick={() => setStrategyDockOpen((v) => !v)}
+                        className={cn(
+                            'absolute top-3 left-3 z-20 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border backdrop-blur-md text-xs font-semibold transition-all duration-200 shadow-lg',
+                            strategyDockOpen
+                                ? 'bg-primary-600/20 border-primary-500/40 text-primary-400 shadow-primary-500/10'
+                                : 'bg-surface-800/80 border-edge/20 text-gray-400 hover:text-gray-200 hover:border-edge/40'
+                        )}
+                        title="Toggle Strategy Dock"
+                    >
+                        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M12 20V10M18 20V4M6 20v-4" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                        Strategies
+                    </button>
                 </div>
 
-                {/* Bottom tabs */}
-                <BottomTabs holdings={holdings} orders={orders} />
+                {/* Bottom tabs (collapsible) */}
+                <div className="border-t border-edge/5">
+                    <button
+                        onClick={() => setBottomTabsOpen((v) => !v)}
+                        className="w-full h-7 flex items-center justify-center gap-2 bg-surface-900/40 hover:bg-surface-800/50 text-gray-500 hover:text-primary-400 transition-colors text-[11px] font-semibold tracking-wide"
+                    >
+                        <svg className={cn('w-3.5 h-3.5 transition-transform duration-200', bottomTabsOpen ? 'rotate-0' : 'rotate-180')} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                        POSITIONS ({holdings.length}) &middot; ORDERS ({orders.length})
+                    </button>
+                    {bottomTabsOpen && <BottomTabs holdings={holdings} orders={orders} />}
+                </div>
             </div>
 
-            {/* ── RIGHT: Order panel ─────────────────────────────────────── */}
+            {/* ── RIGHT: Order panel (full height) ──────────────────────── */}
             <div className="w-[300px] flex-shrink-0 hidden lg:flex flex-col">
                 <OrderPanel
                     symbol={selectedSymbol}
@@ -275,6 +334,15 @@ export default function TradingTerminalPage() {
                     isTerminalFocused={isTerminalFocused}
                 />
             </div>
+
+            {/* ── Floating Strategy Dock popup ───────────────────────────── */}
+            <ErrorBoundary fallback="Strategy dock failed to load.">
+                <StrategyDock
+                    candles={candles}
+                    isOpen={strategyDockOpen}
+                    onClose={() => setStrategyDockOpen(false)}
+                />
+            </ErrorBoundary>
         </div>
     );
 }

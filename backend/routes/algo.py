@@ -5,7 +5,14 @@ from typing import Optional
 from database.connection import get_db
 from models.user import User
 from routes.auth import get_current_user
-from services.algo_engine import get_strategies, create_strategy, toggle_strategy, get_strategy_logs
+from services.algo_engine import (
+    get_strategies,
+    create_strategy,
+    toggle_strategy,
+    get_strategy_logs,
+    delete_strategy,
+    update_strategy,
+)
 
 router = APIRouter(prefix="/api/algo", tags=["Algo Trading"])
 
@@ -58,6 +65,50 @@ async def toggle(
     db: AsyncSession = Depends(get_db),
 ):
     result = await toggle_strategy(db, user.id, strategy_id)
+    if not result["success"]:
+        raise HTTPException(status_code=400, detail=result["error"])
+    return result
+
+
+class UpdateStrategyRequest(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    parameters: Optional[dict] = None
+    max_position_size: Optional[int] = None
+    stop_loss_percent: Optional[float] = None
+    take_profit_percent: Optional[float] = None
+
+
+@router.put("/strategies/{strategy_id}")
+async def update(
+    strategy_id: str,
+    req: UpdateStrategyRequest,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await update_strategy(
+        db=db,
+        user_id=user.id,
+        strategy_id=strategy_id,
+        name=req.name,
+        description=req.description,
+        parameters=req.parameters,
+        max_position_size=req.max_position_size,
+        stop_loss_percent=req.stop_loss_percent,
+        take_profit_percent=req.take_profit_percent,
+    )
+    if not result["success"]:
+        raise HTTPException(status_code=400, detail=result["error"])
+    return result
+
+
+@router.delete("/strategies/{strategy_id}")
+async def delete(
+    strategy_id: str,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await delete_strategy(db, user.id, strategy_id)
     if not result["success"]:
         raise HTTPException(status_code=400, detail=result["error"])
     return result

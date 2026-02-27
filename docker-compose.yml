@@ -10,6 +10,8 @@ services:
     environment:
       - DATABASE_URL=postgresql+asyncpg://alphasync:alphasync@db:5432/alphasync
       - JWT_SECRET_KEY=${JWT_SECRET_KEY:-alphasync-production-secret}
+      - ZEROLOSS_CONFIDENCE_THRESHOLD=${ZEROLOSS_CONFIDENCE_THRESHOLD:-75}
+      - ZEROLOSS_SYMBOLS=${ZEROLOSS_SYMBOLS:-RELIANCE,TCS,HDFCBANK,INFY,ICICIBANK}
     depends_on:
       - db
     volumes:

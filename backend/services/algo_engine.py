@@ -100,10 +100,79 @@ async def toggle_strategy(db: AsyncSession, user_id: str, strategy_id: str) -> d
     )
     db.add(log)
 
-    return {"success": True, "is_active": strategy.is_active, "message": f"Strategy {status}"}
+    return {
+        "success": True,
+        "is_active": strategy.is_active,
+        "message": f"Strategy {status}",
+    }
 
 
-async def get_strategy_logs(db: AsyncSession, strategy_id: str, limit: int = 50) -> list:
+async def delete_strategy(db: AsyncSession, user_id: str, strategy_id: str) -> dict:
+    """Delete an algo strategy (must be deactivated first)."""
+    result = await db.execute(
+        select(AlgoStrategy).where(
+            AlgoStrategy.id == strategy_id,
+            AlgoStrategy.user_id == user_id,
+        )
+    )
+    strategy = result.scalar_one_or_none()
+    if not strategy:
+        return {"success": False, "error": "Strategy not found"}
+    if strategy.is_active:
+        return {"success": False, "error": "Deactivate the strategy before deleting"}
+    await db.delete(strategy)
+    return {"success": True}
+
+
+async def update_strategy(
+    db: AsyncSession,
+    user_id: str,
+    strategy_id: str,
+    name: str = None,
+    description: str = None,
+    parameters: dict = None,
+    max_position_size: int = None,
+    stop_loss_percent: float = None,
+    take_profit_percent: float = None,
+) -> dict:
+    """Update an algo strategy's configuration."""
+    result = await db.execute(
+        select(AlgoStrategy).where(
+            AlgoStrategy.id == strategy_id,
+            AlgoStrategy.user_id == user_id,
+        )
+    )
+    strategy = result.scalar_one_or_none()
+    if not strategy:
+        return {"success": False, "error": "Strategy not found"}
+
+    if name is not None:
+        strategy.name = name
+    if description is not None:
+        strategy.description = description
+    if parameters is not None:
+        strategy.parameters = parameters
+    if max_position_size is not None:
+        strategy.max_position_size = max_position_size
+    if stop_loss_percent is not None:
+        strategy.stop_loss_percent = stop_loss_percent
+    if take_profit_percent is not None:
+        strategy.take_profit_percent = take_profit_percent
+
+    strategy.updated_at = datetime.utcnow()
+
+    log = AlgoLog(
+        strategy_id=strategy.id,
+        level="INFO",
+        message=f"Strategy '{strategy.name}' parameters updated",
+    )
+    db.add(log)
+    return {"success": True}
+
+
+async def get_strategy_logs(
+    db: AsyncSession, strategy_id: str, limit: int = 50
+) -> list:
     """Get logs for a specific strategy."""
     result = await db.execute(
         select(AlgoLog)

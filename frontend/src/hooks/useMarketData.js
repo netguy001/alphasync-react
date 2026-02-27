@@ -43,9 +43,10 @@ export function useMarketData(symbol, { pollInterval = 15_000 } = {}) {
         } catch { /* ignore — keep previous data */ }
     }, [symbol]);
 
-    // Initial load
+    // Initial load — clear old candles so stale data can't bleed across symbols
     useEffect(() => {
         if (!symbol) return;
+        setCandles([]);
         setIsLoading(true);
         setHasError(false);
         Promise.all([fetchQuote(), fetchCandles()])

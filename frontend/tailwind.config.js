@@ -6,6 +6,14 @@ export default {
     ],
     darkMode: 'class',
     theme: {
+        screens: {
+            'xs': '480px',
+            'sm': '640px',
+            'md': '768px',
+            'lg': '1024px',
+            'xl': '1400px',
+            '2xl': '1920px',
+        },
         extend: {
             colors: {
                 // ── Existing brand primary (indigo) ──────────────────────────
@@ -81,9 +89,14 @@ export default {
             },
             // ── Trading-specific font sizes ───────────────────────────────────
             fontSize: {
-                'price-lg': ['1.5rem', { lineHeight: '1', letterSpacing: '-0.02em', fontWeight: '600' }],
+                'price-lg': ['clamp(1.125rem, 1.5vw, 1.5rem)', { lineHeight: '1', letterSpacing: '-0.02em', fontWeight: '600' }],
+                'price-md': ['clamp(0.875rem, 1vw, 1.125rem)', { lineHeight: '1', letterSpacing: '-0.01em', fontWeight: '600' }],
                 'price-sm': ['0.875rem', { lineHeight: '1', letterSpacing: '-0.01em', fontWeight: '500' }],
                 'label': ['0.6875rem', { lineHeight: '1.2', letterSpacing: '0.04em', fontWeight: '500' }],
+                'adaptive': ['clamp(0.75rem, 0.8vw, 0.875rem)', { lineHeight: '1.4' }],
+            },
+            spacing: {
+                'panel-gap': '2px',
             },
             // ── Shadows ───────────────────────────────────────────────────────
             boxShadow: {
@@ -106,6 +119,9 @@ export default {
                 'price-down': 'priceFlashRed 600ms ease-out',
                 'skeleton': 'shimmer 1.5s infinite',
                 'slide-in': 'slideIn 200ms ease-out',
+                'marquee': 'marquee 40s linear infinite',
+                'float': 'float 6s ease-in-out infinite',
+                'shimmer-slow': 'shimmerSlow 3s ease-in-out infinite',
             },
             keyframes: {
                 // existing
@@ -145,6 +161,18 @@ export default {
                 slideIn: {
                     '0%': { transform: 'translateY(-4px)', opacity: '0' },
                     '100%': { transform: 'translateY(0)', opacity: '1' },
+                },
+                marquee: {
+                    '0%': { transform: 'translateX(0)' },
+                    '100%': { transform: 'translateX(-50%)' },
+                },
+                float: {
+                    '0%, 100%': { transform: 'translateY(0px)' },
+                    '50%': { transform: 'translateY(-12px)' },
+                },
+                shimmerSlow: {
+                    '0%, 100%': { opacity: '0.5' },
+                    '50%': { opacity: '1' },
                 },
             },
         },

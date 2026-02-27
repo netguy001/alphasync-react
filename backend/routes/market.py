@@ -34,13 +34,22 @@ async def get_indices():
     return {"indices": indices}
 
 
+@router.get("/ticker")
+async def get_ticker():
+    """All indices + popular stocks for the scrolling ticker bar."""
+    items = await market_data.get_ticker_data()
+    return {"items": items}
+
+
 @router.get("/popular")
 async def get_popular_stocks():
     return {"stocks": market_data.POPULAR_INDIAN_STOCKS}
 
 
 @router.get("/batch")
-async def batch_quotes(symbols: str = Query(..., description="Comma-separated symbols")):
+async def batch_quotes(
+    symbols: str = Query(..., description="Comma-separated symbols")
+):
     symbol_list = [s.strip() for s in symbols.split(",") if s.strip()]
     quotes = await market_data.get_batch_quotes(symbol_list)
     return {"quotes": quotes}

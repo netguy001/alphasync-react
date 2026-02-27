@@ -1,35 +1,108 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
+import { useAuthStore } from '../../stores/useAuthStore';
 import { cn } from '../../utils/cn';
 import { SIDEBAR_EXPANDED_W, SIDEBAR_COLLAPSED_W } from '../../utils/constants';
 import {
-    HiOutlineViewGrid,
-    HiOutlineChartBar,
-    HiOutlineBriefcase,
-    HiOutlineLightningBolt,
-    HiOutlineCog,
-    HiOutlineLogout,
-    HiChevronLeft,
-    HiChevronRight,
-} from 'react-icons/hi';
+    LuLayoutDashboard,
+    LuChartCandlestick,
+    LuBriefcase,
+    LuBot,
+    LuShield,
+    LuSettings,
+    LuLogOut,
+    LuUser,
+    LuPanelLeftClose,
+    LuPanelLeftOpen,
+} from 'react-icons/lu';
 
-const NAV_ITEMS = [
-    { to: '/dashboard', icon: HiOutlineViewGrid, label: 'Dashboard' },
-    { to: '/terminal', icon: HiOutlineChartBar, label: 'Terminal' },
-    { to: '/portfolio', icon: HiOutlineBriefcase, label: 'Portfolio' },
-    { to: '/algo', icon: HiOutlineLightningBolt, label: 'Algo Trading' },
-    { to: '/settings', icon: HiOutlineCog, label: 'Settings' },
+/* ─── Section definitions ────────────────────────────────── */
+const NAV_SECTIONS = [
+    {
+        label: 'Main',
+        items: [
+            { to: '/dashboard', icon: LuLayoutDashboard, label: 'Dashboard' },
+            { to: '/terminal', icon: LuChartCandlestick, label: 'Terminal' },
+        ],
+    },
+    {
+        label: 'Trading',
+        items: [
+            { to: '/portfolio', icon: LuBriefcase, label: 'Portfolio' },
+            { to: '/algo', icon: LuBot, label: 'Algo Trading' },
+            { to: '/zeroloss', icon: LuShield, label: 'ZeroLoss' },
+        ],
+    },
+    {
+        label: 'System',
+        items: [
+            { to: '/settings', icon: LuSettings, label: 'Settings' },
+        ],
+    },
 ];
 
+/* ─── Reusable nav item ──────────────────────────────────── */
+function SidebarItem({ to, icon: Icon, label, collapsed }) {
+    return (
+        <NavLink
+            to={to}
+            title={collapsed ? label : undefined}
+            className={({ isActive }) =>
+                cn(
+                    'relative flex items-center h-10 rounded-md transition-all duration-200 ease-out',
+                    'text-[13px] font-medium',
+                    collapsed ? 'justify-center mx-auto w-full' : 'gap-3 px-3',
+                    isActive
+                        ? 'bg-primary-600/10 text-primary-400'
+                        : 'text-gray-400 hover:text-gray-200 hover:bg-white/[0.04]'
+                )
+            }
+        >
+            {({ isActive }) => (
+                <>
+                    {/* Active indicator bar — pinned to sidebar left edge */}
+                    {isActive && (
+                        <span
+                            className="absolute top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-primary-500"
+                            style={{ left: collapsed ? -10 : -10 }}
+                        />
+                    )}
+                    <Icon className="w-[18px] h-[18px] flex-shrink-0" />
+                    <span
+                        className={cn(
+                            'whitespace-nowrap transition-all duration-200',
+                            collapsed
+                                ? 'w-0 opacity-0 overflow-hidden'
+                                : 'w-auto opacity-100'
+                        )}
+                    >
+                        {label}
+                    </span>
+                </>
+            )}
+        </NavLink>
+    );
+}
+
+/* ─── Section label ──────────────────────────────────────── */
+function SectionLabel({ label, collapsed }) {
+    if (collapsed) return <div className="h-2" />;
+    return (
+        <p className="px-3 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-gray-500 select-none">
+            {label}
+        </p>
+    );
+}
+
 /**
- * Fixed collapsible sidebar.
+ * Fixed collapsible sidebar — institutional-grade navigation.
  * Width: 240px expanded / 72px collapsed.
  * Mobile: full-width drawer with backdrop overlay.
  *
  * @param {{ collapsed: boolean, onToggle: () => void }} props
  */
 export default function Sidebar({ collapsed, onToggle }) {
-    const { logout, user } = useAuth();
+    const logout = useAuthStore((s) => s.logout);
+    const user = useAuthStore((s) => s.user);
     const navigate = useNavigate();
 
     const handleLogout = () => { logout(); navigate('/login'); };
@@ -39,7 +112,7 @@ export default function Sidebar({ collapsed, onToggle }) {
             {/* Mobile overlay */}
             {!collapsed && (
                 <div
-                    className="fixed inset-0 bg-black/60 z-30 lg:hidden"
+                    className="fixed inset-0 bg-black/50 z-30 lg:hidden backdrop-blur-[2px]"
                     onClick={onToggle}
                     aria-hidden="true"
                 />
@@ -49,91 +122,109 @@ export default function Sidebar({ collapsed, onToggle }) {
                 style={{ width: collapsed ? SIDEBAR_COLLAPSED_W : SIDEBAR_EXPANDED_W }}
                 className={cn(
                     'fixed left-0 top-0 h-screen z-40 flex flex-col',
-                    'bg-surface-900/95 backdrop-blur-xl border-r border-edge/5',
-                    'transition-all duration-300 ease-in-out overflow-hidden',
-                    // Mobile: hide when collapsed, slide in when open
+                    'bg-surface-900 border-r border-edge/10',
+                    'transition-[width] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] overflow-hidden',
                     collapsed ? 'max-lg:-translate-x-full' : 'max-lg:translate-x-0 max-lg:w-[240px]'
                 )}
             >
-                {/* Logo row */}
-                <div className="flex items-center h-14 border-b border-edge/5 flex-shrink-0 px-4 gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary-500 to-accent-cyan
-                        flex items-center justify-center text-white font-bold text-lg
-                        shadow-lg shadow-primary-500/20 flex-shrink-0">
-                        α
-                    </div>
-                    {!collapsed && (
-                        <span className="font-bold text-lg tracking-tight text-heading whitespace-nowrap flex-1 overflow-hidden">
-                            Alpha<span className="text-primary-400">Sync</span>
-                        </span>
+                {/* ── Brand row ── */}
+                <div
+                    className={cn(
+                        'flex-shrink-0 transition-all duration-300',
+                        collapsed
+                            ? 'flex flex-col items-center gap-1.5 py-3 px-2'
+                            : 'flex items-center justify-between h-16 px-3'
                     )}
+                >
+                    <img
+                        src={collapsed ? '/logo1.png' : '/logo.png'}
+                        alt="AlphaSync"
+                        className={cn(
+                            'dark:brightness-100 brightness-0 object-contain flex-shrink-0 transition-all duration-300',
+                            collapsed ? 'h-8 w-8' : 'h-14'
+                        )}
+                    />
+                    <button
+                        onClick={onToggle}
+                        className="rounded-md text-gray-500 hover:text-gray-300 hover:bg-white/[0.06] transition-all duration-200 p-1.5 flex-shrink-0"
+                        title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                    >
+                        {collapsed
+                            ? <LuPanelLeftOpen className="w-4 h-4" />
+                            : <LuPanelLeftClose className="w-4 h-4" />}
+                    </button>
                 </div>
 
-                {/* Navigation */}
-                <nav className="flex-1 py-4 px-2 space-y-0.5 overflow-y-auto overflow-x-hidden">
-                    {NAV_ITEMS.map(({ to, icon: Icon, label }) => (
-                        <NavLink
-                            key={to}
-                            to={to}
-                            title={collapsed ? label : undefined}
-                            className={({ isActive }) =>
-                                cn(
-                                    'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200',
-                                    'border-l-2 text-sm font-medium',
-                                    collapsed && 'justify-center',
-                                    isActive
-                                        ? 'bg-primary-600/15 text-primary-400 border-primary-500'
-                                        : 'text-gray-400 hover:text-heading hover:bg-white/5 border-transparent'
-                                )
-                            }
-                        >
-                            <Icon className="w-5 h-5 flex-shrink-0" />
-                            {!collapsed && <span className="whitespace-nowrap">{label}</span>}
-                        </NavLink>
+                {/* ── Divider ── */}
+                <div className="mx-3 h-px bg-edge/8" />
+
+                {/* ── Navigation ── */}
+                <nav className="flex-1 px-2.5 overflow-y-auto overflow-x-hidden">
+                    {NAV_SECTIONS.map((section) => (
+                        <div key={section.label}>
+                            <SectionLabel label={section.label} collapsed={collapsed} />
+                            <div className="space-y-0.5">
+                                {section.items.map((item) => (
+                                    <SidebarItem key={item.to} {...item} collapsed={collapsed} />
+                                ))}
+                            </div>
+                        </div>
                     ))}
                 </nav>
 
-                {/* User + logout */}
-                <div className="p-2 border-t border-edge/5 flex-shrink-0">
-                    {!collapsed && user && (
-                        <div className="px-3 py-2 mb-1">
-                            <p className="text-sm font-medium text-heading truncate">
-                                {user.full_name || user.username}
-                            </p>
-                            <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                {/* ── Divider ── */}
+                <div className="mx-3 h-px bg-edge/8" />
+
+                {/* ── Account module ── */}
+                <div className="flex-shrink-0 p-2.5">
+                    {/* User info */}
+                    {user && (
+                        <div
+                            className={cn(
+                                'flex items-center rounded-md mb-1 transition-all duration-200',
+                                collapsed
+                                    ? 'justify-center py-2'
+                                    : 'gap-2.5 px-3 py-2.5 hover:bg-white/[0.03]'
+                            )}
+                            title={collapsed ? `${user.full_name || user.username}\n${user.email}` : undefined}
+                        >
+                            <div className="w-8 h-8 rounded-full bg-primary-600/15 border border-primary-500/20 flex items-center justify-center flex-shrink-0">
+                                <LuUser className="w-3.5 h-3.5 text-primary-400" />
+                            </div>
+                            <div className={cn(
+                                'min-w-0 transition-all duration-200',
+                                collapsed ? 'w-0 opacity-0 overflow-hidden' : 'w-auto opacity-100'
+                            )}>
+                                <p className="text-[13px] font-medium text-heading truncate leading-tight">
+                                    {user.full_name || user.username}
+                                </p>
+                                <p className="text-[11px] text-gray-500 truncate leading-tight mt-0.5">
+                                    {user.email}
+                                </p>
+                            </div>
                         </div>
                     )}
+
+                    {/* Logout */}
                     <button
                         onClick={handleLogout}
                         title={collapsed ? 'Log Out' : undefined}
                         className={cn(
-                            'flex items-center gap-3 px-3 py-2.5 rounded-lg w-full',
-                            'text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-all duration-200',
-                            collapsed && 'justify-center'
+                            'flex items-center h-10 rounded-md w-full transition-all duration-200',
+                            'text-gray-500 hover:text-red-400 hover:bg-red-500/[0.06]',
+                            collapsed ? 'justify-center' : 'gap-3 px-3'
                         )}
                     >
-                        <HiOutlineLogout className="w-5 h-5 flex-shrink-0" />
-                        {!collapsed && <span className="text-sm font-medium">Log Out</span>}
+                        <LuLogOut className="w-[18px] h-[18px] flex-shrink-0" />
+                        <span className={cn(
+                            'text-[13px] font-medium whitespace-nowrap transition-all duration-200',
+                            collapsed ? 'w-0 opacity-0 overflow-hidden' : 'w-auto opacity-100'
+                        )}>
+                            Log Out
+                        </span>
                     </button>
                 </div>
             </aside>
-
-            {/* Desktop collapse/expand tab — pinned to sidebar right edge, always visible */}
-            <button
-                onClick={onToggle}
-                title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-                style={{ left: (collapsed ? SIDEBAR_COLLAPSED_W : SIDEBAR_EXPANDED_W) - 10 }}
-                className={cn(
-                    'hidden lg:flex items-center justify-center',
-                    'fixed top-[18px] z-50',
-                    'w-5 h-5 rounded-full',
-                    'bg-surface-700 hover:bg-primary-600 border border-edge/20',
-                    'text-gray-400 hover:text-white shadow-md',
-                    'transition-all duration-300 ease-in-out'
-                )}
-            >
-                {collapsed ? <HiChevronRight className="w-3 h-3" /> : <HiChevronLeft className="w-3 h-3" />}
-            </button>
         </>
     );
 }

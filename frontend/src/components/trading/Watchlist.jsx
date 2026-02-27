@@ -33,6 +33,7 @@ export default function Watchlist({
     onItemsChange,
     onBuy,
     onSell,
+    onClose,
 }) {
     const [search, setSearch] = useState('');
     const [addSearch, setAddSearch] = useState('');
@@ -111,53 +112,69 @@ export default function Watchlist({
             {/* Header */}
             <div className="px-3 py-2.5 border-b border-edge/5 space-y-2">
                 <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-widest">
-                        Watchlist
-                    </span>
-                    <div className="relative" ref={addRef}>
-                        <button
-                            onClick={() => setShowAddPanel((v) => !v)}
-                            className="p-1 rounded text-gray-500 hover:text-primary-400 hover:bg-primary-500/10 transition-all"
-                            aria-label="Add symbol"
-                        >
-                            <HiOutlinePlus className="w-4 h-4" />
-                        </button>
+                    <div className="flex items-center gap-2">
+                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-widest">
+                            Watchlist
+                        </span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                        <div className="relative" ref={addRef}>
+                            <button
+                                onClick={() => setShowAddPanel((v) => !v)}
+                                className="p-1 rounded text-gray-500 hover:text-primary-400 hover:bg-primary-500/10 transition-all"
+                                aria-label="Add symbol"
+                            >
+                                <HiOutlinePlus className="w-4 h-4" />
+                            </button>
 
-                        {/* Add panel dropdown */}
-                        {showAddPanel && (
-                            <div className="absolute right-0 top-full mt-1 w-64 bg-surface-800 border border-edge/10 rounded-xl shadow-panel z-50 animate-slide-in">
-                                <div className="p-2 border-b border-edge/5">
-                                    <div className="relative">
-                                        <HiOutlineSearch className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500" />
-                                        <input
-                                            autoFocus
-                                            value={addSearch}
-                                            onChange={(e) => setAddSearch(e.target.value)}
-                                            onKeyDown={(e) => e.key === 'Escape' && setShowAddPanel(false)}
-                                            placeholder="Search symbol…"
-                                            className="w-full pl-7 pr-3 py-1.5 text-xs bg-surface-900/60 border border-edge/10 rounded-lg text-heading placeholder-gray-500 focus:outline-none focus:border-primary-500/30"
-                                        />
+                            {/* Add panel dropdown */}
+                            {showAddPanel && (
+                                <div className="absolute right-0 top-full mt-1 w-64 bg-surface-800 border border-edge/10 rounded-xl shadow-panel z-50 animate-slide-in">
+                                    <div className="p-2 border-b border-edge/5">
+                                        <div className="relative">
+                                            <HiOutlineSearch className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500" />
+                                            <input
+                                                autoFocus
+                                                value={addSearch}
+                                                onChange={(e) => setAddSearch(e.target.value)}
+                                                onKeyDown={(e) => e.key === 'Escape' && setShowAddPanel(false)}
+                                                placeholder="Search symbol…"
+                                                className="w-full pl-7 pr-3 py-1.5 text-xs bg-surface-900/60 border border-edge/10 rounded-lg text-heading placeholder-gray-500 focus:outline-none focus:border-primary-500/30"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="max-h-48 overflow-y-auto">
+                                        {addResults.map((s) => (
+                                            <button
+                                                key={s.symbol}
+                                                onClick={() => handleAdd(s.symbol)}
+                                                className="w-full flex items-center justify-between px-3 py-2 hover:bg-overlay/5 text-left border-b border-edge/[0.03] last:border-0 transition-colors"
+                                            >
+                                                <div>
+                                                    <div className="text-xs font-semibold text-heading">{s.symbol.replace('.NS', '')}</div>
+                                                    <div className="text-[11px] text-gray-500 truncate max-w-[160px]">{s.name}</div>
+                                                </div>
+                                                <HiOutlinePlus className="w-3.5 h-3.5 text-primary-400" />
+                                            </button>
+                                        ))}
+                                        {addSearch.length > 0 && addResults.length === 0 && (
+                                            <div className="px-3 py-4 text-xs text-gray-600 text-center">No results</div>
+                                        )}
                                     </div>
                                 </div>
-                                <div className="max-h-48 overflow-y-auto">
-                                    {addResults.map((s) => (
-                                        <button
-                                            key={s.symbol}
-                                            onClick={() => handleAdd(s.symbol)}
-                                            className="w-full flex items-center justify-between px-3 py-2 hover:bg-overlay/5 text-left border-b border-edge/[0.03] last:border-0 transition-colors"
-                                        >
-                                            <div>
-                                                <div className="text-xs font-semibold text-heading">{s.symbol.replace('.NS', '')}</div>
-                                                <div className="text-[11px] text-gray-500 truncate max-w-[160px]">{s.name}</div>
-                                            </div>
-                                            <HiOutlinePlus className="w-3.5 h-3.5 text-primary-400" />
-                                        </button>
-                                    ))}
-                                    {addSearch.length > 0 && addResults.length === 0 && (
-                                        <div className="px-3 py-4 text-xs text-gray-600 text-center">No results</div>
-                                    )}
-                                </div>
-                            </div>
+                            )}
+                        </div>
+                        {onClose && (
+                            <button
+                                onClick={onClose}
+                                className="p-1.5 rounded-lg bg-surface-700/80 border border-edge/20 text-gray-300 hover:text-red-400 hover:bg-red-500/15 hover:border-red-500/30 transition-all duration-200"
+                                title="Hide watchlist"
+                            >
+                                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M11 19l-7-7 7-7" />
+                                    <path d="M18 5l-6 7 6 7" />
+                                </svg>
+                            </button>
                         )}
                     </div>
                 </div>

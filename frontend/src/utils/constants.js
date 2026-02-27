@@ -14,17 +14,19 @@ export const WS_HEARTBEAT_MS = 30_000;
 
 /** Chart period → { period, interval } mapping (yfinance conventions) */
 export const CHART_PERIODS = {
-    '1D': { period: '1d', interval: '5m', label: '1D' },
-    '1W': { period: '5d', interval: '1h', label: '1W' },
-    '1M': { period: '1mo', interval: '1d', label: '1M' },
-    '3M': { period: '3mo', interval: '1d', label: '3M' },
-    '6M': { period: '6mo', interval: '1d', label: '6M' },
-    '1Y': { period: '1y', interval: '1d', label: '1Y' },
-    '5Y': { period: '5y', interval: '1d', label: '5Y' },
+    '1m': { period: '1d', interval: '1m', label: '1m', group: 'intraday' },
+    '5m': { period: '1d', interval: '5m', label: '5m', group: 'intraday' },
+    '15m': { period: '5d', interval: '15m', label: '15m', group: 'intraday' },
+    '30m': { period: '5d', interval: '30m', label: '30m', group: 'intraday' },
+    '1H': { period: '5d', interval: '1h', label: '1H', group: 'intraday' },
+    '4H': { period: '1mo', interval: '1h', label: '4H', group: 'intraday' },
+    '1D': { period: '6mo', interval: '1d', label: '1D', group: 'daily' },
+    '1W': { period: '1y', interval: '1wk', label: '1W', group: 'daily' },
+    '1M': { period: '5y', interval: '1mo', label: '1M', group: 'daily' },
 };
 
 /** Default chart period key */
-export const DEFAULT_CHART_PERIOD = '3M';
+export const DEFAULT_CHART_PERIOD = '1D';
 
 /** Order sides */
 export const ORDER_SIDE = { BUY: 'BUY', SELL: 'SELL' };

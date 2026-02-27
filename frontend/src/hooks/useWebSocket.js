@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useMarketStore } from '../store/useMarketStore';
+import { useZeroLossStore } from '../stores/useZeroLossStore';
 import { WS_MAX_BACKOFF_MS, WS_HEARTBEAT_MS } from '../utils/constants';
 
 /**
@@ -29,6 +30,7 @@ export function useWebSocket() {
 
     const updateQuote = useMarketStore((s) => s.updateQuote);
     const setWsStatus = useMarketStore((s) => s.setWsStatus);
+    const handleZeroLoss = useZeroLossStore((s) => s.handleWsMessage);
 
     const send = useCallback((payload) => {
         const msg = JSON.stringify(payload);
@@ -85,6 +87,10 @@ export function useWebSocket() {
                 const data = JSON.parse(event.data);
                 if (data.type === 'quote' && data.symbol) {
                     updateQuote(data.symbol, data);
+                }
+                // Route zeroloss channel messages to the zeroloss store
+                if (data.channel === 'zeroloss') {
+                    handleZeroLoss(data);
                 }
                 // pong / other message types can be handled here
             } catch { /* malformed JSON — ignore */ }

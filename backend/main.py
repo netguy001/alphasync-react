@@ -16,6 +16,7 @@ from workers.order_worker import order_execution_worker
 from workers.algo_worker import algo_strategy_worker
 from workers.portfolio_worker import portfolio_recalc_worker
 from core.rate_limiter import RateLimitMiddleware
+from strategies.zeroloss.controller import zeroloss_controller
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -48,11 +49,16 @@ async def lifespan(app: FastAPI):
     event_bus.subscribe(EventType.ALGO_ERROR, manager.on_algo_event)
 
     # Start background workers
+    # Auto-enable ZeroLoss in DEBUG or simulation mode for local testing
+    if settings.DEBUG or market_session.simulation_mode:
+        zeroloss_controller.enable()
+        logger.info("ZeroLoss auto-enabled (DEBUG/SIMULATION_MODE)")
     background_tasks.extend(
         [
             asyncio.create_task(market_data_worker.run()),
             asyncio.create_task(order_execution_worker.run()),
             asyncio.create_task(algo_strategy_worker.run()),
+            asyncio.create_task(zeroloss_controller.run()),
         ]
     )
 
@@ -70,6 +76,7 @@ async def lifespan(app: FastAPI):
                     "market_data",
                     "order_execution",
                     "algo_strategy",
+                    "zeroloss",
                 ]
             },
             source="main",
@@ -77,7 +84,7 @@ async def lifespan(app: FastAPI):
     )
 
     logger.info(
-        f"AlphaSync started | Workers: 4 | Market Session: {market_session.get_current_state().value} | "
+        f"AlphaSync started | Workers: 5 | Market Session: {market_session.get_current_state().value} | "
         f"Simulation Mode: {market_session.simulation_mode}"
     )
     yield
@@ -90,6 +97,7 @@ async def lifespan(app: FastAPI):
     await market_data_worker.stop()
     await order_execution_worker.stop()
     await algo_strategy_worker.stop()
+    await zeroloss_controller.stop()
     await event_bus.stop()
 
     # Cancel all background tasks
@@ -126,6 +134,7 @@ from routes.portfolio import router as portfolio_router
 from routes.watchlist import router as watchlist_router
 from routes.algo import router as algo_router
 from routes.user import router as user_router
+from routes.zeroloss import router as zeroloss_router
 
 app.include_router(auth_router)
 app.include_router(market_router)
@@ -134,6 +143,7 @@ app.include_router(portfolio_router)
 app.include_router(watchlist_router)
 app.include_router(algo_router)
 app.include_router(user_router)
+app.include_router(zeroloss_router)
 
 
 @app.get("/")
@@ -157,6 +167,7 @@ async def health():
             "order_execution": order_execution_worker.get_stats(),
             "algo_strategy": algo_strategy_worker.get_stats(),
             "portfolio_recalc": portfolio_recalc_worker.get_stats(),
+            "zeroloss": zeroloss_controller.get_stats(),
         },
     }
 
@@ -176,4 +187,10 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str = None):
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run(
+        "main:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=True,
+        reload_excludes=["*.db", "*.db-journal", "*.db-wal", "__pycache__"],
+    )

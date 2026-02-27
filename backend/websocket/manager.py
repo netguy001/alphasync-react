@@ -151,17 +151,31 @@ class ConnectionManager:
             )
 
     async def on_algo_event(self, event):
-        """Handle ALGO_TRADE / ALGO_SIGNAL events — send to the specific user."""
-        user_id = event.user_id
-        if user_id:
-            await self.send_to_user(
-                user_id,
+        """Handle ALGO_TRADE / ALGO_SIGNAL events.
+        ZeroLoss channel → broadcast to ALL clients (system-wide strategy).
+        Other algo events → send to specific user only.
+        """
+        channel = (event.data or {}).get("channel", "algo")
+
+        if channel == "zeroloss":
+            await self.broadcast_all(
                 {
                     "type": event.type.value,
-                    "channel": "algo",
+                    "channel": "zeroloss",
                     "data": event.data,
-                },
+                }
             )
+        else:
+            user_id = event.user_id
+            if user_id:
+                await self.send_to_user(
+                    user_id,
+                    {
+                        "type": event.type.value,
+                        "channel": "algo",
+                        "data": event.data,
+                    },
+                )
 
     # ── Legacy Price Streaming ──────────────────────────────────────
     # Kept for backward compat; will be migrated to Market Data Worker

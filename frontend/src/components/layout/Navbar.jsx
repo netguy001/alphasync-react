@@ -1,8 +1,8 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useMarketStore } from '../../store/useMarketStore';
+import { usePortfolioStore } from '../../store/usePortfolioStore';
 import api from '../../services/api';
 import Badge from '../ui/Badge';
 import { cn } from '../../utils/cn';
@@ -12,25 +12,125 @@ import {
     HiOutlineBell,
     HiOutlineMoon,
     HiOutlineSun,
-    HiMenu,
+    HiOutlineCheck,
+    HiOutlineX,
+    HiOutlineClock,
+    HiOutlineExclamation,
+    HiOutlineInformationCircle,
+    HiOutlineTrendingUp,
 } from 'react-icons/hi';
 
 /**
  * Fixed top navigation bar — 56px tall.
- * Hosts: menu toggle, global search, market status, WS status, theme toggle, user avatar.
+ * Hosts: menu toggle, global search, market status, WS status, theme toggle.
  */
+
+// ── Notification helpers ──────────────────────────────────────────────────────
+
+const NOTIF_ICONS = {
+    order_complete: { Icon: HiOutlineCheck, color: 'text-emerald-400', bg: 'bg-emerald-500/20' },
+    order_pending: { Icon: HiOutlineClock, color: 'text-amber-400', bg: 'bg-amber-500/20' },
+    order_rejected: { Icon: HiOutlineX, color: 'text-red-400', bg: 'bg-red-500/20' },
+    market_open: { Icon: HiOutlineTrendingUp, color: 'text-emerald-400', bg: 'bg-emerald-500/20' },
+    market_close: { Icon: HiOutlineInformationCircle, color: 'text-blue-400', bg: 'bg-blue-500/20' },
+    info: { Icon: HiOutlineInformationCircle, color: 'text-gray-400', bg: 'bg-gray-500/20' },
+    warning: { Icon: HiOutlineExclamation, color: 'text-amber-400', bg: 'bg-amber-500/20' },
+};
+
+function timeAgo(ts) {
+    const diff = Date.now() - ts;
+    if (diff < 60_000) return 'Just now';
+    if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}m ago`;
+    if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}h ago`;
+    return `${Math.floor(diff / 86_400_000)}d ago`;
+}
+
+function NotificationPanel({ notifications, onClear, onDismiss }) {
+    return (
+        <div
+            className="absolute top-full right-0 mt-2 w-80 bg-white dark:bg-surface-800 border border-gray-200 dark:border-edge/10 rounded-xl shadow-xl dark:shadow-panel z-50 overflow-hidden animate-slide-in"
+        >
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 py-2.5 border-b border-gray-100 dark:border-edge/5">
+                <span className="text-sm font-semibold text-gray-900 dark:text-heading">Notifications</span>
+                {notifications.length > 0 && (
+                    <button
+                        onClick={onClear}
+                        className="text-[11px] text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                    >
+                        Clear all
+                    </button>
+                )}
+            </div>
+
+            {/* List */}
+            <div className="max-h-80 overflow-y-auto">
+                {notifications.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-10 gap-2">
+                        <HiOutlineBell className="w-8 h-8 text-gray-300 dark:text-gray-700" />
+                        <span className="text-xs text-gray-400 dark:text-gray-600">No notifications</span>
+                    </div>
+                ) : (
+                    notifications.map((n) => {
+                        const cfg = NOTIF_ICONS[n.type] || NOTIF_ICONS.info;
+                        const { Icon } = cfg;
+                        return (
+                            <div
+                                key={n.id}
+                                className="flex items-start gap-3 px-4 py-3 border-b border-gray-100 dark:border-edge/5 last:border-0 transition-colors hover:bg-gray-50 dark:hover:bg-overlay/5"
+                            >
+                                <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5', cfg.bg)}>
+                                    <Icon className={cn('w-4 h-4', cfg.color)} />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-xs text-gray-900 dark:text-white font-medium leading-snug">{n.title}</p>
+                                    <p className="text-[11px] text-gray-600 dark:text-gray-300 mt-0.5 leading-snug">{n.message}</p>
+                                    <span className="text-[10px] text-gray-400 dark:text-gray-500 mt-1 inline-block">{timeAgo(n.timestamp)}</span>
+                                </div>
+                                <button
+                                    onClick={() => onDismiss(n.id)}
+                                    className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors flex-shrink-0 mt-1"
+                                    title="Dismiss"
+                                >
+                                    <HiOutlineX className="w-3.5 h-3.5" />
+                                </button>
+                            </div>
+                        );
+                    })
+                )}
+            </div>
+        </div>
+    );
+}
+
 export default function Navbar({ onMenuToggle }) {
-    const { user } = useAuth();
     const { theme, toggleTheme } = useTheme();
     const navigate = useNavigate();
     const location = useLocation();
     const wsStatus = useMarketStore((s) => s.wsStatus);
+    const orders = usePortfolioStore((s) => s.orders);
 
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
     const [showResults, setShowResults] = useState(false);
     const [marketStatus, setMarketStatus] = useState({ state: 'closed', is_trading: false });
+    const [showNotifications, setShowNotifications] = useState(false);
+    const [notifications, setNotifications] = useState([]);
+    const [seenOrderIds, setSeenOrderIds] = useState(new Set());
     const searchRef = useRef(null);
+    const bellRef = useRef(null);
+
+    // ── Close notification panel on outside click ─────────────────────────────
+    useEffect(() => {
+        if (!showNotifications) return;
+        const handler = (e) => {
+            if (bellRef.current && !bellRef.current.contains(e.target)) {
+                setShowNotifications(false);
+            }
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, [showNotifications]);
 
     // ── Market session polling ────────────────────────────────────────────────
     useEffect(() => {
@@ -43,6 +143,94 @@ export default function Navbar({ onMenuToggle }) {
         fetchStatus();
         const interval = setInterval(fetchStatus, 60_000);
         return () => clearInterval(interval);
+    }, []);
+
+    // ── Generate notifications from orders ────────────────────────────────────
+    useEffect(() => {
+        if (!orders || orders.length === 0) return;
+        const newNotifs = [];
+        orders.forEach((o) => {
+            if (seenOrderIds.has(o.id)) return;
+            const sym = o.symbol?.replace('.NS', '') || 'Unknown';
+            const side = o.side || 'BUY';
+            const qty = o.quantity || 0;
+            const status = o.status || 'PENDING';
+
+            let type = 'order_pending';
+            let title = `Order ${status.charAt(0) + status.slice(1).toLowerCase()}`;
+            let message = `${side} ${qty} × ${sym}`;
+
+            if (status === 'COMPLETE') {
+                type = 'order_complete';
+                title = 'Order Filled';
+                const price = o.filled_price ?? o.price;
+                message = `${side} ${qty} × ${sym} @ ₹${price?.toFixed(2) ?? '—'}`;
+            } else if (status === 'REJECTED' || status === 'CANCELLED') {
+                type = 'order_rejected';
+                title = `Order ${status.charAt(0) + status.slice(1).toLowerCase()}`;
+            }
+
+            newNotifs.push({
+                id: `order-${o.id}`,
+                type,
+                title,
+                message,
+                timestamp: o.created_at ? new Date(o.created_at).getTime() : Date.now(),
+                read: false,
+            });
+        });
+
+        if (newNotifs.length > 0) {
+            setSeenOrderIds((prev) => {
+                const next = new Set(prev);
+                orders.forEach((o) => next.add(o.id));
+                return next;
+            });
+            setNotifications((prev) => [...newNotifs, ...prev].slice(0, 50));
+        }
+    }, [orders]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // ── Generate notification on market status change ─────────────────────────
+    const prevMarketTrading = useRef(null);
+    useEffect(() => {
+        if (prevMarketTrading.current === null) {
+            prevMarketTrading.current = marketStatus.is_trading;
+            return;
+        }
+        if (prevMarketTrading.current !== marketStatus.is_trading) {
+            prevMarketTrading.current = marketStatus.is_trading;
+            setNotifications((prev) => [{
+                id: `market-${Date.now()}`,
+                type: marketStatus.is_trading ? 'market_open' : 'market_close',
+                title: marketStatus.is_trading ? 'Market Opened' : 'Market Closed',
+                message: marketStatus.is_trading
+                    ? 'NSE is now open for trading.'
+                    : 'NSE trading session has ended.',
+                timestamp: Date.now(),
+                read: false,
+            }, ...prev].slice(0, 50));
+        }
+    }, [marketStatus.is_trading]);
+
+    // ── Notification helpers ──────────────────────────────────────────────────
+    const unreadCount = useMemo(() => notifications.filter((n) => !n.read).length, [notifications]);
+
+    const handleDismiss = useCallback((id) => {
+        setNotifications((prev) => prev.filter((n) => n.id !== id));
+    }, []);
+
+    const handleClearAll = useCallback(() => {
+        setNotifications([]);
+    }, []);
+
+    const toggleNotifications = useCallback(() => {
+        setShowNotifications((v) => {
+            if (!v) {
+                // Mark all as read when opening
+                setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+            }
+            return !v;
+        });
     }, []);
 
     // ── Symbol search (debounced 300ms) ───────────────────────────────────────
@@ -116,15 +304,8 @@ export default function Navbar({ onMenuToggle }) {
                 </span>
             </div>
 
-            {/* Left: hamburger + search */}
+            {/* Left: search */}
             <div className="flex items-center gap-3">
-                <button
-                    onClick={onMenuToggle}
-                    className="text-gray-400 hover:text-heading p-1.5 rounded-lg hover:bg-white/5 transition-all"
-                    aria-label="Toggle sidebar"
-                >
-                    <HiMenu className="w-5 h-5" />
-                </button>
 
                 {/* Stock search */}
                 <div className="relative hidden sm:block" ref={searchRef}>
@@ -195,31 +376,61 @@ export default function Navbar({ onMenuToggle }) {
                     <span className="text-xs text-gray-500">{wsLabel}</span>
                 </div>
 
-                {/* Theme toggle */}
+                {/* Theme toggle — animated */}
                 <button
                     onClick={toggleTheme}
-                    className="p-2 rounded-lg text-gray-400 hover:text-heading hover:bg-overlay/5 transition-all"
+                    className="relative p-2 rounded-lg text-gray-400 hover:text-heading hover:bg-overlay/5 transition-all duration-300 group"
                     aria-label="Toggle theme"
                 >
-                    {theme === 'dark'
-                        ? <HiOutlineSun className="w-5 h-5" />
-                        : <HiOutlineMoon className="w-5 h-5" />}
+                    {/* Sun icon */}
+                    <HiOutlineSun
+                        className={cn(
+                            'w-5 h-5 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 transition-all duration-500 ease-in-out',
+                            theme === 'dark'
+                                ? 'opacity-100 rotate-0 scale-100'
+                                : 'opacity-0 rotate-90 scale-0'
+                        )}
+                    />
+                    {/* Moon icon */}
+                    <HiOutlineMoon
+                        className={cn(
+                            'w-5 h-5 transition-all duration-500 ease-in-out',
+                            theme === 'dark'
+                                ? 'opacity-0 -rotate-90 scale-0'
+                                : 'opacity-100 rotate-0 scale-100'
+                        )}
+                    />
                 </button>
 
                 {/* Notifications */}
-                <button
-                    className="p-2 rounded-lg text-gray-400 hover:text-heading hover:bg-overlay/5 transition-all relative"
-                    aria-label="Notifications"
-                >
-                    <HiOutlineBell className="w-5 h-5" />
-                    <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary-500 rounded-full" />
-                </button>
-
-                {/* User avatar */}
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-500 to-primary-700
-                    flex items-center justify-center text-white text-sm font-bold ml-1 cursor-pointer select-none">
-                    {user?.full_name?.charAt(0) || user?.username?.charAt(0) || 'U'}
+                <div className="relative" ref={bellRef}>
+                    <button
+                        onClick={toggleNotifications}
+                        className={cn(
+                            'p-2 rounded-lg transition-all relative',
+                            showNotifications
+                                ? 'text-primary-400 bg-primary-500/10'
+                                : 'text-gray-400 hover:text-heading hover:bg-overlay/5'
+                        )}
+                        aria-label="Notifications"
+                    >
+                        <HiOutlineBell className={cn('w-5 h-5 transition-transform', unreadCount > 0 && 'animate-[bell-ring_0.5s_ease-in-out]')} />
+                        {unreadCount > 0 && (
+                            <span className="absolute top-1 right-1 min-w-[16px] h-4 px-1 rounded-full bg-primary-500 text-[10px] font-bold text-white flex items-center justify-center leading-none">
+                                {unreadCount > 9 ? '9+' : unreadCount}
+                            </span>
+                        )}
+                    </button>
+                    {showNotifications && (
+                        <NotificationPanel
+                            notifications={notifications}
+                            onClear={handleClearAll}
+                            onDismiss={handleDismiss}
+                        />
+                    )}
                 </div>
+
+
             </div>
         </header>
     );

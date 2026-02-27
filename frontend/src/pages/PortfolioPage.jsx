@@ -17,7 +17,10 @@ export default function PortfolioPage() {
 
     return (
         <div className="p-4 lg:p-6 space-y-6 animate-fade-in">
-            <h1 className="text-2xl font-bold text-heading">Portfolio</h1>
+            <div>
+                <h1 className="text-2xl font-bold text-heading">Portfolio</h1>
+                <p className="text-gray-500 text-sm mt-0.5">Track your holdings and performance</p>
+            </div>
             <PortfolioSummary summary={summary} isLoading={isLoading} />
             <ErrorBoundary fallback="Holdings table failed to load.">
                 <HoldingsTable holdings={holdings} isLoading={isLoading} />
