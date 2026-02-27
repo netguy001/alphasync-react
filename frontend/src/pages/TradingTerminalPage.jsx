@@ -113,13 +113,25 @@ function BottomTabs({ holdings, orders }) {
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function TradingTerminalPage() {
+    const [searchParams] = useSearchParams();
+
+    // ── FIX: re-sync selectedSymbol whenever the URL ?symbol= param changes ──
+    // This handles clicks from MarketTickerBar, Navbar search, or any Link that
+    // navigates to /terminal?symbol=XYZ after the page is already mounted.
+    const symbolFromUrl = searchParams.get('symbol') || 'RELIANCE.NS';
+    const [selectedSymbol, setSelectedSymbol] = useState(symbolFromUrl);
+
+    useEffect(() => {
+        if (symbolFromUrl && symbolFromUrl !== selectedSymbol) {
+            setSelectedSymbol(symbolFromUrl);
+        }
+    // We intentionally only react to symbolFromUrl changes, not selectedSymbol
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [symbolFromUrl]);
+
     // ZeroLoss backend confidence/direction for selected symbol
     const zlConfidence = useZeroLossStore((s) => s.confidence[selectedSymbol] || null);
-    const [searchParams] = useSearchParams();
-    const initialSymbol = searchParams.get('symbol') || 'RELIANCE.NS';
-    const initialAction = (searchParams.get('action') || 'buy').toUpperCase(); // eslint-disable-line no-unused-vars
 
-    const [selectedSymbol, setSelectedSymbol] = useState(initialSymbol);
     const [chartPeriod, setChartPeriod] = useState(DEFAULT_CHART_PERIOD);
     const [watchlistId, setWatchlistId] = useState(null);
     const [watchlistItems, setWatchlistItems] = useState([]);
@@ -136,7 +148,7 @@ export default function TradingTerminalPage() {
     // Hook: quote + candles for the selected symbol
     const { quote, candles, isLoading: chartLoading, fetchCandles } = useMarketData(selectedSymbol);
 
-    // Compute trend data for chart overlay (must be after useMarketData)
+    // Compute trend data for chart overlay
     const trendData = useMemo(() => {
         if (!candles || candles.length === 0) return null;
         const strategies = getAvailableStrategies();
@@ -148,7 +160,6 @@ export default function TradingTerminalPage() {
             weightedScore: result.weightedScore ?? 0,
         };
     }, [candles]);
-
 
     // Re-fetch candles when period or symbol changes
     useEffect(() => {
@@ -200,8 +211,6 @@ export default function TradingTerminalPage() {
     const handleSelectSymbol = useCallback((symbol) => setSelectedSymbol(symbol), []);
     const handleBuy = useCallback((symbol) => setSelectedSymbol(symbol), []);
     const handleSell = useCallback((symbol) => setSelectedSymbol(symbol), []);
-
-
 
     return (
         <div
