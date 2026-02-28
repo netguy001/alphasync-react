@@ -13,6 +13,9 @@ router = APIRouter(prefix="/api/watchlist", tags=["Watchlist"])
 class CreateWatchlistRequest(BaseModel):
     name: str = "My Watchlist"
 
+class RenameWatchlistRequest(BaseModel):
+    name: str
+
 class AddItemRequest(BaseModel):
     symbol: str
     exchange: str = "NSE"
@@ -30,10 +33,10 @@ async def get_watchlists(
 
     wl_list = []
     for wl in watchlists:
-        result = await db.execute(
+        items_result = await db.execute(
             select(WatchlistItem).where(WatchlistItem.watchlist_id == wl.id)
         )
-        items = result.scalars().all()
+        items = items_result.scalars().all()
         wl_list.append({
             "id": wl.id,
             "name": wl.name,
@@ -52,10 +55,37 @@ async def create_watchlist(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    wl = Watchlist(user_id=user.id, name=req.name)
+    """Create a new watchlist — unlimited per user."""
+    name = req.name.strip() or "My Watchlist"
+    wl = Watchlist(user_id=user.id, name=name)
     db.add(wl)
     await db.flush()
     return {"id": wl.id, "name": wl.name, "items": []}
+
+
+@router.patch("/{watchlist_id}")
+async def rename_watchlist(
+    watchlist_id: str,
+    req: RenameWatchlistRequest,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(Watchlist).where(
+            Watchlist.id == watchlist_id, Watchlist.user_id == user.id
+        )
+    )
+    wl = result.scalar_one_or_none()
+    if not wl:
+        raise HTTPException(status_code=404, detail="Watchlist not found")
+
+    name = req.name.strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Name cannot be empty")
+
+    wl.name = name
+    await db.flush()
+    return {"id": wl.id, "name": wl.name}
 
 
 @router.post("/{watchlist_id}/items")
@@ -74,7 +104,6 @@ async def add_item(
     if not wl:
         raise HTTPException(status_code=404, detail="Watchlist not found")
 
-    # Check duplicate
     result = await db.execute(
         select(WatchlistItem).where(
             WatchlistItem.watchlist_id == watchlist_id,
@@ -108,7 +137,6 @@ async def delete_watchlist(
     wl = result.scalar_one_or_none()
     if not wl:
         raise HTTPException(status_code=404, detail="Watchlist not found")
-
     await db.delete(wl)
     return {"message": "Watchlist deleted"}
 
@@ -131,7 +159,8 @@ async def remove_item(
 
     result = await db.execute(
         select(WatchlistItem).where(
-            WatchlistItem.id == item_id, WatchlistItem.watchlist_id == watchlist_id
+            WatchlistItem.id == item_id,
+            WatchlistItem.watchlist_id == watchlist_id,
         )
     )
     item = result.scalar_one_or_none()
@@ -139,4 +168,4 @@ async def remove_item(
         raise HTTPException(status_code=404, detail="Item not found")
 
     await db.delete(item)
-    return {"message": "Item removed from watchlist"}
+    return {"message": "Item removed"}

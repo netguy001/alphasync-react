@@ -39,10 +39,8 @@ function TickerItem({ item, onClick }) {
                 {isPositive
                     ? <HiTrendingUp className="w-3 h-3" />
                     : <HiTrendingDown className="w-3 h-3" />}
-                {isPositive ? '+' : ''}{formatPercent(item.change_percent, 2)}
+                {isPositive ? ' ' : ' '}{formatPercent(item.change_percent, 2)}
             </span>
-            {/* separator dot */}
-            <span className="text-gray-700 text-[8px] ml-1">●</span>
         </div>
     );
 }

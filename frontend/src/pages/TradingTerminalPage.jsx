@@ -1,10 +1,11 @@
-// ─── TradingTerminalPage — refactored ────────────────────────────────────────
-// Layout: [Watchlist 200px] | [Chart + BottomTabs flex-1] | [OrderPanel 300px]
-// All data logic delegated to useMarketData, usePortfolioStore, and Zustand.
+// ─── TradingTerminalPage — watchlist wired to store ───────────────────────────
+// Watchlist state (items, prices, id) is now owned by useWatchlistStore.
+// TradingTerminalPage no longer manages watchlist local state at all.
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useMarketStore } from '../store/useMarketStore';
 import { usePortfolioStore } from '../store/usePortfolioStore';
+import { useWatchlistStore } from '../stores/useWatchlistStore';
 import { useMarketData } from '../hooks/useMarketData';
 import TradingChart from '../components/trading/TradingChart';
 import { useZeroLossStore } from '../stores/useZeroLossStore';
@@ -16,7 +17,6 @@ import ErrorBoundary from '../components/ErrorBoundary';
 import { cn } from '../utils/cn';
 import { formatPrice, formatPercent, pnlColorClass } from '../utils/formatters';
 import { CHART_PERIODS, DEFAULT_CHART_PERIOD, ORDER_STATUS_CLASS } from '../utils/constants';
-import api from '../services/api';
 
 // ── Bottom tabs: positions + order history ────────────────────────────────────
 function BottomTabs({ holdings, orders }) {
@@ -114,10 +114,6 @@ function BottomTabs({ holdings, orders }) {
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function TradingTerminalPage() {
     const [searchParams] = useSearchParams();
-
-    // ── FIX: re-sync selectedSymbol whenever the URL ?symbol= param changes ──
-    // This handles clicks from MarketTickerBar, Navbar search, or any Link that
-    // navigates to /terminal?symbol=XYZ after the page is already mounted.
     const symbolFromUrl = searchParams.get('symbol') || 'RELIANCE.NS';
     const [selectedSymbol, setSelectedSymbol] = useState(symbolFromUrl);
 
@@ -125,25 +121,23 @@ export default function TradingTerminalPage() {
         if (symbolFromUrl && symbolFromUrl !== selectedSymbol) {
             setSelectedSymbol(symbolFromUrl);
         }
-    // We intentionally only react to symbolFromUrl changes, not selectedSymbol
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [symbolFromUrl]);
 
-    // ZeroLoss backend confidence/direction for selected symbol
     const zlConfidence = useZeroLossStore((s) => s.confidence[selectedSymbol] || null);
 
     const [chartPeriod, setChartPeriod] = useState(DEFAULT_CHART_PERIOD);
-    const [watchlistId, setWatchlistId] = useState(null);
-    const [watchlistItems, setWatchlistItems] = useState([]);
-    const [watchlistPrices, setWatchlistPrices] = useState({});
     const [isTerminalFocused, setIsTerminalFocused] = useState(false);
     const [strategyDockOpen, setStrategyDockOpen] = useState(false);
     const [watchlistOpen, setWatchlistOpen] = useState(true);
     const [bottomTabsOpen, setBottomTabsOpen] = useState(false);
 
-    // Zustand stores
+    // ── Stores ────────────────────────────────────────────────────────────────
     const { holdings, orders, refreshPortfolio } = usePortfolioStore();
     const batchUpdateQuotes = useMarketStore((s) => s.batchUpdateQuotes);
+
+    // ── Watchlist store — single source of truth ──────────────────────────────
+    const { loadWatchlist, fetchPrices, updatePrices } = useWatchlistStore();
 
     // Hook: quote + candles for the selected symbol
     const { quote, candles, isLoading: chartLoading, fetchCandles } = useMarketData(selectedSymbol);
@@ -172,41 +166,23 @@ export default function TradingTerminalPage() {
         refreshPortfolio();
     }, [refreshPortfolio]);
 
-    // Load watchlist
+    // ── Load watchlist from store on mount ────────────────────────────────────
     useEffect(() => {
-        const load = async () => {
-            try {
-                const res = await api.get('/watchlist');
-                const wls = res.data.watchlists || [];
-                if (wls.length > 0) {
-                    setWatchlistId(wls[0].id);
-                    setWatchlistItems(wls[0].items || []);
-                } else {
-                    const createRes = await api.post('/watchlist', { name: 'My Watchlist' });
-                    setWatchlistId(createRes.data.id);
-                    setWatchlistItems([]);
-                }
-            } catch { /* ignore */ }
-        };
-        load();
-    }, []);
+        loadWatchlist();
+    }, [loadWatchlist]);
 
-    // Poll watchlist prices every 15 s
+    // ── FIX: Poll watchlist prices every 5s (was 15s) for faster price updates ─
     useEffect(() => {
-        if (watchlistItems.length === 0) return;
-        const fetchPrices = async () => {
-            const symbols = watchlistItems.map((w) => w.symbol).join(',');
-            try {
-                const res = await api.get(`/market/batch?symbols=${symbols}`);
-                const quotes = res.data.quotes || {};
-                setWatchlistPrices(quotes);
-                batchUpdateQuotes(quotes);
-            } catch { /* ignore */ }
-        };
         fetchPrices();
-        const id = setInterval(fetchPrices, 15_000);
+        const id = setInterval(() => {
+            fetchPrices().then(() => {
+                // Also sync to MarketStore so chart overlays stay current
+                const { prices } = useWatchlistStore.getState();
+                batchUpdateQuotes(prices);
+            });
+        }, 5_000);
         return () => clearInterval(id);
-    }, [watchlistItems, batchUpdateQuotes]);
+    }, [fetchPrices, batchUpdateQuotes]);
 
     const handleSelectSymbol = useCallback((symbol) => setSelectedSymbol(symbol), []);
     const handleBuy = useCallback((symbol) => setSelectedSymbol(symbol), []);
@@ -221,14 +197,13 @@ export default function TradingTerminalPage() {
             {/* ── LEFT: Watchlist ────────────────────────────────────────── */}
             {watchlistOpen && (
                 <div className="w-[220px] flex-shrink-0 hidden lg:flex flex-col relative transition-all duration-300">
+                    {/*
+                     * Watchlist no longer receives watchlistId/items/prices as props.
+                     * It reads everything directly from useWatchlistStore internally.
+                     */}
                     <Watchlist
-                        watchlistId={watchlistId}
-                        items={watchlistItems}
-                        prices={watchlistPrices}
                         selectedSymbol={selectedSymbol}
-                        isLoading={false}
                         onSelectSymbol={handleSelectSymbol}
-                        onItemsChange={setWatchlistItems}
                         onBuy={handleBuy}
                         onSell={handleSell}
                         onClose={() => setWatchlistOpen(false)}

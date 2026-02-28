@@ -4,6 +4,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useTheme } from '../../context/ThemeContext';
 import { useMarketStore } from '../../store/useMarketStore';
 import { usePortfolioStore } from '../../store/usePortfolioStore';
+import { useWatchlistStore } from '../../stores/useWatchlistStore';
+import { useShallow } from 'zustand/react/shallow';
 import api from '../../services/api';
 import Badge from '../ui/Badge';
 import { cn } from '../../utils/cn';
@@ -19,11 +21,13 @@ import {
     HiOutlineExclamation,
     HiOutlineInformationCircle,
     HiOutlineTrendingUp,
+    HiStar,
+    HiOutlineStar,
 } from 'react-icons/hi';
 
 /**
  * Fixed top navigation bar — 56px tall.
- * Hosts: menu toggle, global search, market status, WS status, theme toggle.
+ * Hosts: menu toggle, global search (with watchlist star), market status, WS status, theme toggle.
  */
 
 // ── Notification helpers ──────────────────────────────────────────────────────
@@ -48,10 +52,7 @@ function timeAgo(ts) {
 
 function NotificationPanel({ notifications, onClear, onDismiss }) {
     return (
-        <div
-            className="absolute top-full right-0 mt-2 w-80 bg-white dark:bg-surface-800 border border-gray-200 dark:border-edge/10 rounded-xl shadow-xl dark:shadow-panel z-50 overflow-hidden animate-slide-in"
-        >
-            {/* Header */}
+        <div className="absolute top-full right-0 mt-2 w-80 bg-white dark:bg-surface-800 border border-gray-200 dark:border-edge/10 rounded-xl shadow-xl dark:shadow-panel z-50 overflow-hidden animate-slide-in">
             <div className="flex items-center justify-between px-4 py-2.5 border-b border-gray-100 dark:border-edge/5">
                 <span className="text-sm font-semibold text-gray-900 dark:text-heading">Notifications</span>
                 {notifications.length > 0 && (
@@ -63,8 +64,6 @@ function NotificationPanel({ notifications, onClear, onDismiss }) {
                     </button>
                 )}
             </div>
-
-            {/* List */}
             <div className="max-h-80 overflow-y-auto">
                 {notifications.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-10 gap-2">
@@ -111,6 +110,29 @@ export default function Navbar({ onMenuToggle }) {
     const wsStatus = useMarketStore((s) => s.wsStatus);
     const orders = usePortfolioStore((s) => s.orders);
 
+    // ── Watchlist store ────────────────────────────────────────────────────────
+    // FIX: Select only stable primitives/actions from the store individually.
+    // Never select a derived array like `items` inline — that creates a new array
+    // reference every render and causes an infinite update loop.
+    // Instead: select `watchlists` + `activeId` (stable references that only change
+    // when data actually changes), then derive `watchlistedSymbols` with useMemo.
+    const watchlists = useWatchlistStore((s) => s.watchlists);
+    const activeId = useWatchlistStore((s) => s.activeId);
+    const addToWatchlist = useWatchlistStore((s) => s.addItem);
+    const removeFromWatchlist = useWatchlistStore((s) => s.removeItem);
+
+    // Derive the active watchlist's items safely — only recomputes when watchlists
+    // or activeId actually changes, not on every render.
+    const watchlistItems = useMemo(() => {
+        return watchlists.find(w => w.id === activeId)?.items ?? [];
+    }, [watchlists, activeId]);
+
+    // Stable O(1) set of watchlisted symbols for fast lookup in the dropdown
+    const watchlistedSymbols = useMemo(
+        () => new Set(watchlistItems.map((i) => i.symbol)),
+        [watchlistItems]
+    );
+
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
     const [showResults, setShowResults] = useState(false);
@@ -118,6 +140,7 @@ export default function Navbar({ onMenuToggle }) {
     const [showNotifications, setShowNotifications] = useState(false);
     const [notifications, setNotifications] = useState([]);
     const [seenOrderIds, setSeenOrderIds] = useState(new Set());
+    const [starredNow, setStarredNow] = useState(new Set());
     const searchRef = useRef(null);
     const bellRef = useRef(null);
 
@@ -227,7 +250,6 @@ export default function Navbar({ onMenuToggle }) {
     const toggleNotifications = useCallback(() => {
         setShowNotifications((v) => {
             if (!v) {
-                // Mark all as read when opening
                 setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
             }
             return !v;
@@ -273,6 +295,30 @@ export default function Navbar({ onMenuToggle }) {
         navigate(`/terminal?symbol=${symbol}`);
     }, [navigate]);
 
+    // ── Star toggle ───────────────────────────────────────────────────────────
+    const handleStarClick = useCallback((e, stock) => {
+        e.stopPropagation();
+        const symbol = stock.symbol;
+        // Read latest items directly from store to avoid stale closure
+        const currentItems = useWatchlistStore.getState().watchlists
+            .find(w => w.id === useWatchlistStore.getState().activeId)?.items ?? [];
+        const existing = currentItems.find((i) => i.symbol === symbol);
+
+        if (existing) {
+            removeFromWatchlist(existing.id);
+        } else {
+            addToWatchlist(symbol, stock.exchange || 'NSE');
+            setStarredNow((prev) => new Set([...prev, symbol]));
+            setTimeout(() => {
+                setStarredNow((prev) => {
+                    const next = new Set(prev);
+                    next.delete(symbol);
+                    return next;
+                });
+            }, 600);
+        }
+    }, [addToWatchlist, removeFromWatchlist]);
+
     // ── Derived display values ─────────────────────────────────────────────────
     const isMarketOpen = marketStatus.is_trading;
     const statusText = MARKET_STATE_LABEL[marketStatus.state] ?? 'Market Closed';
@@ -307,8 +353,6 @@ export default function Navbar({ onMenuToggle }) {
 
             {/* Left: search */}
             <div className="flex items-center gap-3">
-
-                {/* Stock search */}
                 <div className="relative hidden sm:block" ref={searchRef}>
                     <HiOutlineSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
                     <input
@@ -331,36 +375,64 @@ export default function Navbar({ onMenuToggle }) {
                             'focus:outline-none focus:border-primary-500/30 transition-all duration-200'
                         )}
                     />
-                    <kbd className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-gray-600 bg-surface-700 px-1.5 py-0.5 rounded font-mono">
-                        /
-                    </kbd>
 
-                    {/* Autocomplete dropdown */}
+                    {/* ── Autocomplete dropdown ── */}
                     {showResults && searchResults.length > 0 && (
-                        <div className="absolute top-full left-0 right-0 mt-1 bg-surface-800 border border-edge/10 rounded-xl shadow-panel z-50 max-h-[280px] overflow-y-auto animate-slide-in">
-                            {searchResults.map((stock) => (
-                                <button
-                                    key={stock.symbol}
-                                    onClick={() => handleSelectStock(stock.symbol)}
-                                    className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-overlay/5 transition-colors text-left border-b border-edge/5 last:border-0"
-                                >
-                                    <div>
-                                        <div className="text-sm font-semibold text-heading">
-                                            {stock.symbol.replace('.NS', '')}
-                                        </div>
-                                        <div className="text-xs text-gray-500">{stock.name}</div>
+                        <div
+                            className="absolute top-full left-0 mt-1 bg-white dark:bg-surface-800 border border-gray-200 dark:border-edge/10 rounded-xl shadow-xl dark:shadow-panel z-50 max-h-[280px] overflow-y-auto animate-slide-in"
+                            style={{ minWidth: '100%', width: 'max-content' }}
+                        >
+                            {searchResults.map((stock) => {
+                                const isWatchlisted = watchlistedSymbols.has(stock.symbol);
+                                const justStarred = starredNow.has(stock.symbol);
+                                return (
+                                    <div
+                                        key={stock.symbol}
+                                        className="flex items-center border-b border-gray-100 dark:border-edge/5 last:border-0"
+                                    >
+                                        {/* Main row — navigate to terminal */}
+                                        <button
+                                            onClick={() => handleSelectStock(stock.symbol)}
+                                            className="flex-1 flex items-center gap-4 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-white/[0.03] transition-colors text-left"
+                                        >
+                                            <div className="flex-1 min-w-0">
+                                                <div className="text-sm font-semibold text-gray-900 dark:text-heading">
+                                                    {stock.symbol.replace('.NS', '')}
+                                                </div>
+                                                <div className="text-xs text-gray-500 truncate">{stock.name}</div>
+                                            </div>
+                                            {/* FIX: NSE/BSE badge — explicit colors for light + dark mode */}
+                                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded flex-shrink-0 bg-gray-200 text-gray-600 dark:bg-surface-700 dark:text-gray-400">
+                                                {stock.exchange}
+                                            </span>
+                                        </button>
+
+                                        {/* Star button — gold when in watchlist, outline when not */}
+                                        <button
+                                            onClick={(e) => handleStarClick(e, stock)}
+                                            title={isWatchlisted ? 'Remove from watchlist' : 'Add to watchlist'}
+                                            className={cn(
+                                                'flex-shrink-0 w-9 h-full flex items-center justify-center mr-1 rounded-lg transition-all duration-200',
+                                                isWatchlisted
+                                                    ? 'text-amber-400 hover:text-gray-400 hover:bg-gray-500/10'
+                                                    : 'text-gray-400 hover:text-amber-400 hover:bg-amber-400/10',
+                                                justStarred && 'scale-125'
+                                            )}
+                                        >
+                                            {isWatchlisted
+                                                ? <HiStar className="w-[17px] h-[17px]" />
+                                                : <HiOutlineStar className="w-[17px] h-[17px]" />
+                                            }
+                                        </button>
                                     </div>
-                                    <span className="text-xs text-gray-600 bg-surface-700 px-1.5 py-0.5 rounded">
-                                        {stock.exchange}
-                                    </span>
-                                </button>
-                            ))}
+                                );
+                            })}
                         </div>
                     )}
                 </div>
             </div>
 
-            {/* Right: market status, WS status, theme, bell, avatar */}
+            {/* Right: market status, WS status, theme, bell */}
             <div className="flex items-center gap-1.5">
                 {/* Market status */}
                 <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-800/40 mr-1">
@@ -377,13 +449,12 @@ export default function Navbar({ onMenuToggle }) {
                     <span className="text-xs text-gray-500">{wsLabel}</span>
                 </div>
 
-                {/* Theme toggle — animated */}
+                {/* Theme toggle */}
                 <button
                     onClick={toggleTheme}
                     className="relative p-2 rounded-lg text-gray-400 hover:text-heading hover:bg-overlay/5 transition-all duration-300 group"
                     aria-label="Toggle theme"
                 >
-                    {/* Sun icon */}
                     <HiOutlineSun
                         className={cn(
                             'w-5 h-5 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 transition-all duration-500 ease-in-out',
@@ -392,7 +463,6 @@ export default function Navbar({ onMenuToggle }) {
                                 : 'opacity-0 rotate-90 scale-0'
                         )}
                     />
-                    {/* Moon icon */}
                     <HiOutlineMoon
                         className={cn(
                             'w-5 h-5 transition-all duration-500 ease-in-out',
@@ -430,9 +500,7 @@ export default function Navbar({ onMenuToggle }) {
                         />
                     )}
                 </div>
-
-
             </div>
         </header>
     );
-}
+}   

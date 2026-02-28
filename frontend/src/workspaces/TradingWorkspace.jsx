@@ -48,12 +48,20 @@ export default function TradingWorkspace() {
     const { holdings, orders, refreshPortfolio } = usePortfolioStore();
     const batchUpdateQuotes = useMarketStore((s) => s.batchUpdateQuotes);
 
-    // Watchlist store
-    const watchlistId = useWatchlistStore((s) => s.watchlistId);
-    const watchlistItems = useWatchlistStore((s) => s.items);
+    // ── Watchlist store — FIX: use proper reactive selectors, NOT broken JS getters ──
+    // The store previously had `get items()` and `get watchlistId()` as JS getters.
+    // Those were removed. Now we must select raw state and derive what we need.
+    const watchlists    = useWatchlistStore((s) => s.watchlists);
+    const activeId      = useWatchlistStore((s) => s.activeId);
     const watchlistPrices = useWatchlistStore((s) => s.prices);
     const loadWatchlist = useWatchlistStore((s) => s.loadWatchlist);
     const fetchWatchlistPrices = useWatchlistStore((s) => s.fetchPrices);
+
+    // Derive items safely — only recomputes when watchlists/activeId actually change
+    const watchlistItems = useMemo(
+        () => watchlists.find(w => w.id === activeId)?.items ?? [],
+        [watchlists, activeId]
+    );
 
     // Strategy store
     const setEngineOutput = useStrategyStore((s) => s.setEngineOutput);
@@ -61,20 +69,18 @@ export default function TradingWorkspace() {
     // ── Hooks ─────────────────────────────────────────────────────────────────
     const { quote, candles, isLoading: chartLoading, fetchCandles } = useMarketData(selectedSymbol);
 
+    const zlConfidence = useZeroLossStore((s) => s.confidence[selectedSymbol] || null);
+
     // ── Derived: Trend data — locked to first candle load per symbol ─────────
-    // Changing the chart timeframe does NOT recompute the trend.
-    // Trend only recalculates when a new symbol is selected.
     const trendLockRef = useRef({ symbol: null, data: null });
 
     const trendData = useMemo(() => {
         if (!candles || candles.length === 0) return trendLockRef.current.data;
 
-        // Already computed for this symbol — return cached result
         if (trendLockRef.current.symbol === selectedSymbol) {
             return trendLockRef.current.data;
         }
 
-        // First candle load for a new symbol — compute & lock
         const strategies = getAvailableStrategies();
         const enabledIds = strategies.map((s) => s.id);
         const result = runEngine(candles, enabledIds);
@@ -97,10 +103,12 @@ export default function TradingWorkspace() {
     useEffect(() => { refreshPortfolio(); }, [refreshPortfolio]);
     useEffect(() => { loadWatchlist(); }, [loadWatchlist]);
 
+    // FIX: watchlistItems is now always a valid array (never undefined),
+    // so .length is safe. Poll every 5s for faster price updates.
     useEffect(() => {
         if (watchlistItems.length === 0) return;
         fetchWatchlistPrices();
-        const id = setInterval(fetchWatchlistPrices, 15_000);
+        const id = setInterval(fetchWatchlistPrices, 5_000);
         return () => clearInterval(id);
     }, [watchlistItems, fetchWatchlistPrices]);
 
@@ -148,16 +156,13 @@ export default function TradingWorkspace() {
         },
     ], [holdings, orders]);
 
-    // ── Shared watchlist props ─────────────────────────────────────────────────
+    // ── Shared watchlist element ───────────────────────────────────────────────
+    // NOTE: Watchlist now reads everything from useWatchlistStore internally.
+    // We no longer need to pass items/prices/watchlistId as props.
     const watchlistEl = (
         <Watchlist
-            watchlistId={watchlistId}
-            items={watchlistItems}
-            prices={watchlistPrices}
             selectedSymbol={selectedSymbol}
-            isLoading={false}
             onSelectSymbol={handleSelectSymbol}
-            onItemsChange={() => { }}
             onBuy={(s) => { setSelectedSymbol(s); handleBuy(); }}
             onSell={(s) => { setSelectedSymbol(s); handleSell(); }}
         />
@@ -221,7 +226,7 @@ export default function TradingWorkspace() {
                         candles={candles}
                         isLoading={chartLoading}
                         trendData={trendData}
-                        zeroLossTrend={useZeroLossStore((s) => s.confidence[selectedSymbol] || null)}
+                        zeroLossTrend={zlConfidence}
                     />
                 </ErrorBoundary>
             </div>

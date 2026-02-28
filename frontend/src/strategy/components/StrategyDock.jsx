@@ -3,81 +3,167 @@ import { cn } from '../../utils/cn';
 import { useZeroLossStore } from '../../stores/useZeroLossStore';
 import { getAvailableStrategies, runEngine } from '../engine';
 
-// -- Colour tokens ----------------------------------------------------------------
+// ── Colour tokens ────────────────────────────────────────────────────────────
 const SIG = {
-    Bullish: { pill: 'bg-emerald-500/15 text-emerald-400', dot: 'bg-emerald-400', bar: 'bg-emerald-500' },
-    Bearish: { pill: 'bg-red-500/15 text-red-400', dot: 'bg-red-400', bar: 'bg-red-500' },
-    Neutral: { pill: 'bg-amber-500/15 text-amber-400', dot: 'bg-amber-400', bar: 'bg-amber-500' },
+    Bullish: {
+        pill: 'bg-emerald-500/12 text-emerald-400 ring-1 ring-emerald-500/20',
+        dot: 'bg-emerald-400',
+        bar: 'bg-gradient-to-r from-emerald-500 to-emerald-400',
+        glow: 'shadow-emerald-500/20',
+    },
+    Bearish: {
+        pill: 'bg-red-500/12 text-red-400 ring-1 ring-red-500/20',
+        dot: 'bg-red-400',
+        bar: 'bg-gradient-to-r from-red-500 to-red-400',
+        glow: 'shadow-red-500/20',
+    },
+    Neutral: {
+        pill: 'bg-amber-500/12 text-amber-400 ring-1 ring-amber-500/20',
+        dot: 'bg-amber-400',
+        bar: 'bg-gradient-to-r from-amber-500 to-amber-400',
+        glow: 'shadow-amber-500/20',
+    },
 };
 
 const BIAS = {
-    BULLISH: { bg: 'from-emerald-500/10 to-transparent', text: 'text-emerald-400', icon: '\u25b2', label: 'Bullish' },
-    BEARISH: { bg: 'from-red-500/10 to-transparent', text: 'text-red-400', icon: '\u25bc', label: 'Bearish' },
-    NEUTRAL: { bg: 'from-amber-500/8 to-transparent', text: 'text-amber-400', icon: '\u2014', label: 'Neutral' },
+    BULLISH: {
+        border: 'border-emerald-500/20',
+        accent: 'bg-emerald-500',
+        text: 'text-emerald-400',
+        subtext: 'text-emerald-300',
+        bg: 'bg-emerald-500/[0.06]',
+        glow: 'shadow-emerald-500/10',
+        label: 'BULLISH',
+        icon: (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
+                <polyline points="16 7 22 7 22 13" />
+            </svg>
+        ),
+    },
+    BEARISH: {
+        border: 'border-red-500/20',
+        accent: 'bg-red-500',
+        text: 'text-red-400',
+        subtext: 'text-red-300',
+        bg: 'bg-red-500/[0.06]',
+        glow: 'shadow-red-500/10',
+        label: 'BEARISH',
+        icon: (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                <polyline points="22 17 13.5 8.5 8.5 13.5 2 7" />
+                <polyline points="16 17 22 17 22 11" />
+            </svg>
+        ),
+    },
+    NEUTRAL: {
+        border: 'border-amber-500/15',
+        accent: 'bg-amber-500',
+        text: 'text-amber-400',
+        subtext: 'text-amber-300',
+        bg: 'bg-amber-500/[0.04]',
+        glow: 'shadow-amber-500/10',
+        label: 'NEUTRAL',
+        icon: (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+        ),
+    },
 };
 
 const LS_KEY = 'alphasync_strategy_enabled';
 const LS_POS_KEY = 'alphasync_strategy_dock_pos';
 
 const loadEnabled = () => { try { const r = localStorage.getItem(LS_KEY); return r ? JSON.parse(r) : null; } catch { return null; } };
-const saveEnabled = (m) => { try { localStorage.setItem(LS_KEY, JSON.stringify(m)); } catch { /* */ } };
+const saveEnabled = (m) => { try { localStorage.setItem(LS_KEY, JSON.stringify(m)); } catch { } };
 const loadPos = () => { try { const r = localStorage.getItem(LS_POS_KEY); return r ? JSON.parse(r) : null; } catch { return null; } };
-const savePos = (p) => { try { localStorage.setItem(LS_POS_KEY, JSON.stringify(p)); } catch { /* */ } };
+const savePos = (p) => { try { localStorage.setItem(LS_POS_KEY, JSON.stringify(p)); } catch { } };
 
-// -- Sub-components ----------------------------------------------------------------
-
+// ── Signal Badge ─────────────────────────────────────────────────────────────
 function SignalBadge({ signal }) {
     const s = SIG[signal] || SIG.Neutral;
     return (
-        <span className={cn('inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded', s.pill)}>
-            <span className={cn('w-1.5 h-1.5 rounded-full', s.dot)} />
+        <span className={cn('inline-flex items-center gap-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full tracking-wide', s.pill)}>
+            <span className={cn('w-1.5 h-1.5 rounded-full flex-shrink-0', s.dot)} />
             {signal}
         </span>
     );
 }
 
-function ConfidenceBar({ value, signal }) {
-    const s = SIG[signal] || SIG.Neutral;
-    return (
-        <div className="h-1 rounded-full bg-edge/[0.06] overflow-hidden w-full">
-            <div
-                className={cn('h-full rounded-full transition-all duration-500 ease-out', s.bar)}
-                style={{ width: `${Math.max(value, 4)}%` }}
-            />
-        </div>
-    );
-}
-
+// ── Strategy Row ─────────────────────────────────────────────────────────────
 function StrategyRow({ meta, result, enabled, onToggle }) {
+    const s = SIG[result?.signal] || SIG.Neutral;
+    const conf = result?.confidence ?? 0;
+
     return (
         <div className={cn(
-            'rounded-lg transition-all duration-150',
-            enabled ? 'bg-edge/[0.02] hover:bg-edge/[0.04]' : 'opacity-40',
+            'rounded-xl border transition-all duration-200',
+            enabled
+                ? 'border-white/[0.04] bg-white/[0.02] hover:bg-white/[0.035] hover:border-white/[0.07]'
+                : 'border-white/[0.02] bg-transparent opacity-40',
         )}>
-            <div className="flex items-center gap-2.5 px-3 py-2">
+            {/* Row header */}
+            <div className="flex items-center gap-3 px-3.5 py-2.5">
+                {/* Toggle */}
                 <button
                     onClick={onToggle}
                     className={cn(
-                        'w-8 h-[18px] rounded-full relative flex-shrink-0 transition-colors duration-200 border',
-                        enabled ? 'bg-primary-500/80 border-primary-500/50' : 'bg-edge/10 border-edge/10',
+                        'relative w-9 h-5 rounded-full flex-shrink-0 transition-all duration-250 focus:outline-none',
+                        enabled
+                            ? 'bg-primary-500 shadow-lg shadow-primary-500/30'
+                            : 'bg-white/8',
                     )}
+                    aria-checked={enabled}
+                    role="switch"
                 >
                     <span className={cn(
-                        'absolute top-[2px] w-[12px] h-[12px] rounded-full bg-white shadow-sm transition-transform duration-200',
-                        enabled ? 'translate-x-[15px]' : 'translate-x-[2px]',
+                        'absolute top-[3px] w-[14px] h-[14px] rounded-full bg-white shadow-md transition-all duration-250',
+                        enabled ? 'left-[19px]' : 'left-[3px]',
                     )} />
                 </button>
-                <span className="flex-1 text-[11px] font-semibold text-gray-300 truncate leading-tight">{meta.name}</span>
-                <span className="text-[10px] text-gray-600 font-mono tabular-nums w-7 text-right flex-shrink-0">
+
+                {/* Name */}
+                <span className={cn(
+                    'flex-1 text-[12px] font-semibold leading-tight truncate',
+                    enabled ? 'text-gray-200' : 'text-gray-500',
+                )}>
+                    {meta.name}
+                </span>
+
+                {/* Weight pill */}
+                <span className="text-[10px] text-gray-600 font-mono bg-white/[0.03] px-1.5 py-0.5 rounded-md flex-shrink-0">
                     {Math.round((meta.weight || 0.1) * 100)}%
                 </span>
-                {enabled && result && <SignalBadge signal={result.signal} />}
+
+                {/* Signal badge */}
+                {enabled && result && (
+                    <div className="flex-shrink-0">
+                        <SignalBadge signal={result.signal} />
+                    </div>
+                )}
             </div>
+
+            {/* Confidence bar + detail */}
             {enabled && result && (
-                <div className="px-3 pb-2 space-y-1">
-                    <ConfidenceBar value={result.confidence} signal={result.signal} />
+                <div className="px-3.5 pb-3 space-y-1.5">
+                    {/* Bar track */}
+                    <div className="flex items-center gap-2">
+                        <div className="flex-1 h-[3px] rounded-full bg-white/[0.04] overflow-hidden">
+                            <div
+                                className={cn('h-full rounded-full transition-all duration-700 ease-out', s.bar)}
+                                style={{ width: `${Math.max(conf, 4)}%` }}
+                            />
+                        </div>
+                        <span className={cn('text-[10px] font-mono font-bold tabular-nums flex-shrink-0', s.dot.replace('bg-', 'text-').replace('-400', '-400'))}>
+                            {conf}%
+                        </span>
+                    </div>
+                    {/* Detail text */}
                     {result.detail && (
-                        <p className="text-[9px] text-gray-600 leading-snug truncate ml-[42px]">{result.detail}</p>
+                        <p className="text-[10px] text-gray-600 leading-relaxed pl-12 truncate">
+                            {result.detail}
+                        </p>
                     )}
                 </div>
             )}
@@ -85,12 +171,49 @@ function StrategyRow({ meta, result, enabled, onToggle }) {
     );
 }
 
+// ── Circular Score Ring ───────────────────────────────────────────────────────
+function ScoreRing({ score, confidence, bias }) {
+    const b = BIAS[bias] || BIAS.NEUTRAL;
+    const radius = 28;
+    const circ = 2 * Math.PI * radius;
+    const pct = Math.min(Math.abs(confidence) / 100, 1);
+    const offset = circ * (1 - pct);
 
-// == STRATEGY DOCK -- Floating popup (draggable) ==================================
+    return (
+        <div className="relative flex-shrink-0">
+            <svg width="72" height="72" className="-rotate-90">
+                <circle cx="36" cy="36" r={radius} fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="5" />
+                <circle
+                    cx="36" cy="36" r={radius}
+                    fill="none"
+                    stroke={bias === 'BULLISH' ? '#10b981' : bias === 'BEARISH' ? '#ef4444' : '#f59e0b'}
+                    strokeWidth="5"
+                    strokeLinecap="round"
+                    strokeDasharray={circ}
+                    strokeDashoffset={offset}
+                    style={{ transition: 'stroke-dashoffset 0.8s cubic-bezier(0.4,0,0.2,1)' }}
+                />
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className={cn('text-base font-black tabular-nums leading-none', b.text)}>
+                    {confidence}%
+                </span>
+                <span className="text-[8px] text-gray-600 font-semibold tracking-wide mt-0.5">CONF</span>
+            </div>
+        </div>
+    );
+}
 
+// ══ STRATEGY DOCK ════════════════════════════════════════════════════════════
 export default function StrategyDock({ candles = [], isOpen = false, onClose }) {
-    const selectedSymbol = candles && candles.length > 0 && candles[candles.length - 1].symbol ? candles[candles.length - 1].symbol : null;
-    const zeroLossForSymbol = useZeroLossStore((s) => selectedSymbol ? s.confidence[selectedSymbol] || null : null);
+    const selectedSymbol = candles?.length > 0 && candles[candles.length - 1]?.symbol
+        ? candles[candles.length - 1].symbol
+        : null;
+
+    const zeroLossForSymbol = useZeroLossStore((s) =>
+        selectedSymbol ? s.confidence[selectedSymbol] || null : null
+    );
+
     const allStrategies = useMemo(() => getAvailableStrategies(), []);
 
     const [enabledMap, setEnabledMap] = useState(() => {
@@ -125,14 +248,16 @@ export default function StrategyDock({ candles = [], isOpen = false, onClose }) 
     const b = BIAS[engine.overall] || BIAS.NEUTRAL;
     const bulls = engine.signals.filter((s) => s.signal === 'Bullish').length;
     const bears = engine.signals.filter((s) => s.signal === 'Bearish').length;
+    const neutrals = engine.signals.length - bulls - bears;
+    const total = engine.signals.length || 1;
 
-    // -- Dragging ------------------------------------------------------------------
+    // ── Dragging ──────────────────────────────────────────────────────────
     const panelRef = useRef(null);
     const drag = useRef({ active: false, sx: 0, sy: 0, ox: 0, oy: 0 });
-    const [pos, setPos] = useState(() => loadPos() || { x: Math.max(280, window.innerWidth - 360), y: 100 });
+    const [pos, setPos] = useState(() => loadPos() || { x: Math.max(280, window.innerWidth - 400), y: 80 });
 
     const clamp = useCallback((p) => ({
-        x: Math.max(0, Math.min(window.innerWidth - 320, p.x)),
+        x: Math.max(0, Math.min(window.innerWidth - 360, p.x)),
         y: Math.max(0, Math.min(window.innerHeight - 120, p.y)),
     }), []);
 
@@ -163,94 +288,179 @@ export default function StrategyDock({ candles = [], isOpen = false, onClose }) 
         return () => window.removeEventListener('resize', h);
     }, [clamp]);
 
-    const neutrals = engine.signals.length - bulls - bears;
-    const total = engine.signals.length || 1;
-
     if (!isOpen) return null;
+
+    const scoreDisplay = `${engine.weightedScore >= 0 ? '+' : ''}${engine.weightedScore}`;
 
     return (
         <div
             ref={panelRef}
-            className="fixed z-50 flex flex-col rounded-2xl border border-edge/[0.06] bg-surface-900/95 backdrop-blur-2xl shadow-2xl shadow-black/60 select-none"
-            style={{ left: pos.x, top: pos.y, width: 340 }}
+            className="fixed z-50 flex flex-col rounded-2xl select-none"
+            style={{
+                left: pos.x,
+                top: pos.y,
+                width: 360,
+                background: 'rgba(10, 11, 14, 0.96)',
+                border: '1px solid rgba(255,255,255,0.07)',
+                boxShadow: '0 32px 64px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.03), inset 0 1px 0 rgba(255,255,255,0.05)',
+                backdropFilter: 'blur(24px)',
+            }}
         >
-            {/* -- Title bar (drag handle) ----------------------------------------- */}
+            {/* ── HEADER ─────────────────────────────────────────────────── */}
             <div
                 onMouseDown={onGrab}
-                className="flex items-center justify-between px-4 py-2 cursor-move border-b border-edge/[0.04]"
+                className="flex items-center justify-between px-4 py-3 cursor-move flex-shrink-0"
+                style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}
             >
-                <div className="flex items-center gap-2">
-                    <div className="w-5 h-5 rounded-md bg-primary-500/15 flex items-center justify-center">
-                        <svg className="w-3 h-3 text-primary-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <div className="flex items-center gap-2.5">
+                    {/* Icon */}
+                    <div className="w-6 h-6 rounded-lg flex items-center justify-center"
+                        style={{ background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.25)' }}>
+                        <svg className="w-3.5 h-3.5 text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                             <path d="M12 20V10M18 20V4M6 20v-4" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
                     </div>
-                    <span className="text-[11px] font-bold text-gray-300 uppercase tracking-wider">Strategy Engine</span>
+                    <div>
+                        <span className="text-[12px] font-bold text-gray-200 tracking-wide">Strategy Engine</span>
+                    </div>
                 </div>
-                <div className="flex items-center gap-1">
-                    <span className="text-[10px] text-gray-600 font-mono mr-1.5">{enabledIds.length}/{allStrategies.length}</span>
-                    <button onClick={onClose} className="p-1 rounded-md hover:bg-edge/5 transition-colors group" title="Close">
-                        <svg className="w-3.5 h-3.5 text-gray-600 group-hover:text-red-400 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+
+                <div className="flex items-center gap-2">
+                    {/* Active count badge */}
+                    <span className="text-[10px] font-bold text-gray-500 bg-white/[0.04] px-2 py-0.5 rounded-full font-mono">
+                        {enabledIds.length}/{allStrategies.length} active
+                    </span>
+                    {/* Drag hint */}
+                    <div className="flex flex-col gap-[3px] opacity-30 px-1 cursor-move">
+                        <div className="flex gap-[3px]">{[0,1,2].map(i => <div key={i} className="w-[3px] h-[3px] rounded-full bg-gray-400" />)}</div>
+                        <div className="flex gap-[3px]">{[0,1,2].map(i => <div key={i} className="w-[3px] h-[3px] rounded-full bg-gray-400" />)}</div>
+                    </div>
+                    {/* Close */}
+                    <button
+                        onClick={onClose}
+                        className="w-6 h-6 rounded-md flex items-center justify-center text-gray-600 hover:text-red-400 hover:bg-red-500/10 transition-all duration-150"
+                        title="Close"
+                    >
+                        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                             <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
                     </button>
                 </div>
             </div>
 
-            {/* -- Market Bias hero ------------------------------------------------ */}
-            <div className={cn('mx-3 mt-3 rounded-xl p-3 bg-gradient-to-br', b.bg)}>
-                <div className="flex items-center justify-between">
-                    <div>
-                        <p className="text-[9px] text-gray-500 uppercase tracking-wider font-semibold mb-0.5">Market Bias</p>
-                        <div className="flex items-center gap-1.5">
-                            <span className={cn('text-xl font-black tracking-tight', b.text)}>{b.icon}</span>
-                            <span className={cn('text-base font-extrabold uppercase tracking-wide', b.text)}>{b.label}</span>
+            {/* ── MARKET BIAS CARD ────────────────────────────────────────── */}
+            <div className="p-3 flex-shrink-0">
+                <div
+                    className={cn('rounded-xl p-4 border', b.bg, b.border)}
+                    style={{ boxShadow: `0 8px 24px rgba(0,0,0,0.3)` }}
+                >
+                    {/* Top row: bias label + ring */}
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="space-y-1.5">
+                            <p className="text-[9px] text-gray-600 uppercase tracking-[0.12em] font-bold">Market Bias</p>
+                            <div className="flex items-center gap-2">
+                                <span className={cn('flex items-center justify-center w-6 h-6 rounded-lg', b.bg, b.border)}>
+                                    <span className={b.text}>{b.icon}</span>
+                                </span>
+                                <span className={cn('text-xl font-black tracking-tight', b.text)}>
+                                    {b.label}
+                                </span>
+                            </div>
+                            {/* Score */}
+                            <div className="flex items-center gap-1.5 mt-1">
+                                <span className="text-[10px] text-gray-600">Score</span>
+                                <span className={cn('text-[11px] font-bold font-mono tabular-nums', b.text)}>
+                                    {scoreDisplay}
+                                </span>
+                            </div>
                         </div>
+
+                        {/* Circular confidence ring */}
+                        <ScoreRing
+                            score={engine.score ?? 0}
+                            confidence={engine.confidence}
+                            bias={engine.overall}
+                        />
                     </div>
-                    <div className="text-right space-y-0.5">
-                        <div>
-                            <span className="text-[9px] text-gray-600">Score </span>
-                            <span className={cn('text-sm font-bold font-mono', b.text)}>
-                                {engine.weightedScore >= 0 ? '+' : ''}{engine.weightedScore}
-                            </span>
+
+                    {/* Signal distribution bar */}
+                    <div className="space-y-1.5">
+                        <div className="flex h-2 rounded-full overflow-hidden gap-[2px]"
+                            style={{ background: 'rgba(255,255,255,0.04)' }}>
+                            {bulls > 0 && (
+                                <div
+                                    className="bg-emerald-500 rounded-full transition-all duration-700 ease-out"
+                                    style={{ width: `${(bulls / total) * 100}%` }}
+                                />
+                            )}
+                            {neutrals > 0 && (
+                                <div
+                                    className="bg-amber-500/60 transition-all duration-700 ease-out"
+                                    style={{ width: `${(neutrals / total) * 100}%` }}
+                                />
+                            )}
+                            {bears > 0 && (
+                                <div
+                                    className="bg-red-500 rounded-full transition-all duration-700 ease-out"
+                                    style={{ width: `${(bears / total) * 100}%` }}
+                                />
+                            )}
                         </div>
-                        <div>
-                            <span className="text-[9px] text-gray-600">Conf </span>
-                            <span className={cn('text-xs font-bold font-mono', b.text)}>{engine.confidence}%</span>
-                        </div>
-                    </div>
-                </div>
-                {zeroLossForSymbol && (
-                    <div className="mt-3 text-sm text-gray-300 border-t border-edge/5 pt-3">
-                        <div className="flex items-center justify-between">
-                            <div className="text-[11px] font-semibold">ZeroLoss (backend)</div>
-                            <div className="text-xs font-mono">
-                                <span className="mr-3">{zeroLossForSymbol.direction}</span>
-                                <span className="font-bold">{Math.round(zeroLossForSymbol.score)}%</span>
+                        <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-1.5">
+                                <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                                <span className="text-[10px] font-semibold text-emerald-400">{bulls} Bull</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                                <div className="w-2 h-2 rounded-full bg-red-500" />
+                                <span className="text-[10px] font-semibold text-red-400">{bears} Bear</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                                <div className="w-2 h-2 rounded-full bg-amber-500/60" />
+                                <span className="text-[10px] font-semibold text-gray-500">{neutrals} Flat</span>
                             </div>
                         </div>
                     </div>
-                )}
 
-                {/* Signal distribution bar */}
-                <div className="flex h-1.5 rounded-full overflow-hidden mt-2.5 bg-edge/[0.04]">
-                    {bulls > 0 && <div className="bg-emerald-500/80 transition-all duration-500" style={{ width: `${(bulls / total) * 100}%` }} />}
-                    {neutrals > 0 && <div className="bg-amber-500/50 transition-all duration-500" style={{ width: `${(neutrals / total) * 100}%` }} />}
-                    {bears > 0 && <div className="bg-red-500/80 transition-all duration-500" style={{ width: `${(bears / total) * 100}%` }} />}
-                </div>
-
-                {/* Bull / Bear / Neutral counts */}
-                <div className="flex items-center gap-3 mt-2 pt-1.5">
-                    <span className="text-[10px] font-semibold text-emerald-400">{bulls} Bull</span>
-                    <span className="text-[10px] font-semibold text-red-400">{bears} Bear</span>
-                    <span className="text-[10px] font-semibold text-gray-500">{neutrals} Flat</span>
-                    <div className="flex-1" />
-                    <span className="text-[9px] text-gray-600 font-mono">{(engine.score ?? 0) >= 0 ? '+' : ''}{engine.score ?? 0}%</span>
+                    {/* ZeroLoss backend row */}
+                    {zeroLossForSymbol && (
+                        <div className="mt-3 pt-3 flex items-center justify-between"
+                            style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                            <div className="flex items-center gap-1.5">
+                                <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
+                                <span className="text-[10px] font-semibold text-gray-500">ZeroLoss Backend</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <span className={cn(
+                                    'text-[10px] font-bold px-2 py-0.5 rounded-full',
+                                    zeroLossForSymbol.direction === 'BULLISH'
+                                        ? 'bg-emerald-500/15 text-emerald-400'
+                                        : 'bg-red-500/15 text-red-400'
+                                )}>
+                                    {zeroLossForSymbol.direction}
+                                </span>
+                                <span className="text-[11px] font-bold font-mono text-gray-300">
+                                    {Math.round(zeroLossForSymbol.score)}%
+                                </span>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
 
-            {/* -- Strategy rows --------------------------------------------------- */}
-            <div className="px-3 py-2.5 space-y-1 max-h-[320px] overflow-y-auto scrollbar-none">
+            {/* ── SECTION LABEL ───────────────────────────────────────────── */}
+            <div className="px-4 pb-2 flex items-center gap-2 flex-shrink-0">
+                <span className="text-[9px] font-bold text-gray-700 uppercase tracking-[0.15em]">Strategies</span>
+                <div className="flex-1 h-px bg-white/[0.04]" />
+            </div>
+
+            {/* ── STRATEGY ROWS ───────────────────────────────────────────── */}
+            <div className="px-3 pb-3 space-y-1.5 overflow-y-auto flex-1"
+                style={{
+                    maxHeight: 300,
+                    scrollbarWidth: 'none',
+                    msOverflowStyle: 'none',
+                }}>
                 {allStrategies.map((meta) => (
                     <StrategyRow
                         key={meta.id}
@@ -262,10 +472,11 @@ export default function StrategyDock({ candles = [], isOpen = false, onClose }) 
                 ))}
             </div>
 
-            {/* -- Footer ---------------------------------------------------------- */}
-            <div className="px-4 py-2 border-t border-edge/[0.03] text-center">
-                <p className="text-[9px] text-gray-700 leading-relaxed">
-                    Weighted scoring {'\u00b7'} {'>'}+0.3 Bullish {'\u00b7'} {'<'}-0.3 Bearish
+            {/* ── FOOTER ─────────────────────────────────────────────────── */}
+            <div className="px-4 py-2.5 flex-shrink-0"
+                style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+                <p className="text-[9px] text-gray-700 text-center leading-relaxed tracking-wide">
+                    Weighted scoring · &gt;+0.3 Bullish · &lt;−0.3 Bearish
                 </p>
             </div>
         </div>
