@@ -3,7 +3,7 @@ import api from '../services/api';
 
 /**
  * Auth store — replaces AuthContext.
- * Owns: user, token, isAuthenticated, login, register, logout.
+ * Owns: user, token, isAuthenticated, login, register, logout, updateUser.
  */
 export const useAuthStore = create((set, get) => ({
     /** @type {object|null} */
@@ -43,5 +43,23 @@ export const useAuthStore = create((set, get) => ({
         localStorage.removeItem('alphasync_refresh');
         localStorage.removeItem('alphasync_user');
         set({ user: null });
+    },
+
+    /**
+     * Partially update user fields in store + localStorage.
+     * Used by: avatar upload, profile form, any settings save.
+     * 
+     * @param {Partial<object>} patch - fields to merge into current user
+     * 
+     * @example
+     * updateUser({ avatar_url: 'https://...' })
+     * updateUser({ full_name: 'Bharath A', phone: '+91 99999 99999' })
+     */
+    updateUser: (patch) => {
+        const current = get().user;
+        if (!current) return;
+        const updated = { ...current, ...patch };
+        localStorage.setItem('alphasync_user', JSON.stringify(updated));
+        set({ user: updated });
     },
 }));

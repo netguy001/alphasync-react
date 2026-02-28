@@ -1,4 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException
+import os
+import uuid
+import shutil
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import BaseModel
 from typing import Optional
@@ -8,6 +12,13 @@ from routes.auth import get_current_user
 from services.auth_service import hash_password, verify_password
 
 router = APIRouter(prefix="/api/user", tags=["User"])
+
+# ── Avatar storage config ─────────────────────────────────────────────────────
+UPLOAD_DIR = "uploads/avatars"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+ALLOWED_TYPES = {"image/jpeg", "image/png", "image/gif", "image/webp"}
+MAX_SIZE_BYTES = 2 * 1024 * 1024  # 2MB
 
 
 class UpdateProfileRequest(BaseModel):
@@ -48,7 +59,7 @@ async def update_profile(
         user.phone = req.phone
     if req.avatar_url is not None:
         user.avatar_url = req.avatar_url
-
+    await db.flush()
     return {"message": "Profile updated successfully"}
 
 
@@ -60,6 +71,87 @@ async def change_password(
 ):
     if not verify_password(req.current_password, user.password_hash):
         raise HTTPException(status_code=400, detail="Current password is incorrect")
-
     user.password_hash = hash_password(req.new_password)
+    await db.flush()
     return {"message": "Password changed successfully"}
+
+
+# ── Avatar upload ─────────────────────────────────────────────────────────────
+
+@router.post("/avatar")
+async def upload_avatar(
+    avatar: UploadFile = File(...),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    # Validate content type
+    if avatar.content_type not in ALLOWED_TYPES:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid file type. Only JPG, PNG, GIF, and WebP are allowed."
+        )
+
+    # Read and validate size
+    contents = await avatar.read()
+    if len(contents) > MAX_SIZE_BYTES:
+        raise HTTPException(status_code=400, detail="File too large. Maximum size is 2MB.")
+
+    # Delete old avatar file from disk if it exists
+    if user.avatar_url:
+        old_path = _url_to_path(user.avatar_url)
+        if old_path and os.path.exists(old_path):
+            os.remove(old_path)
+
+    # Save new file with a unique name
+    ext = _get_extension(avatar.content_type)
+    filename = f"{user.id}_{uuid.uuid4().hex}{ext}"
+    filepath = os.path.join(UPLOAD_DIR, filename)
+
+    with open(filepath, "wb") as f:
+        f.write(contents)
+
+    # Build the public URL (served by FastAPI StaticFiles)
+    avatar_url = f"/uploads/avatars/{filename}"
+
+    # Persist to DB
+    user.avatar_url = avatar_url
+    await db.flush()
+
+    return {"avatar_url": avatar_url}
+
+
+@router.delete("/avatar")
+async def delete_avatar(
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    if not user.avatar_url:
+        raise HTTPException(status_code=404, detail="No profile photo to remove")
+
+    # Delete file from disk
+    old_path = _url_to_path(user.avatar_url)
+    if old_path and os.path.exists(old_path):
+        os.remove(old_path)
+
+    user.avatar_url = None
+    await db.flush()
+
+    return {"message": "Profile photo removed"}
+
+
+# ── Helpers ───────────────────────────────────────────────────────────────────
+
+def _get_extension(content_type: str) -> str:
+    return {
+        "image/jpeg": ".jpg",
+        "image/png":  ".png",
+        "image/gif":  ".gif",
+        "image/webp": ".webp",
+    }.get(content_type, ".jpg")
+
+
+def _url_to_path(url: str) -> Optional[str]:
+    """Convert a public URL like /uploads/avatars/x.jpg to a local file path."""
+    if url and url.startswith("/uploads/"):
+        return url.lstrip("/")   # → uploads/avatars/x.jpg
+    return None

@@ -2,8 +2,10 @@ import asyncio
 import uuid
 import logging
 from contextlib import asynccontextmanager
+import os
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from config.settings import settings
 from database.connection import init_db
 from websocket.manager import manager
@@ -144,6 +146,10 @@ app.include_router(watchlist_router)
 app.include_router(algo_router)
 app.include_router(user_router)
 app.include_router(zeroloss_router)
+
+# ── Serve uploaded files (avatars etc.) ───────────────────────────────────────
+os.makedirs("uploads/avatars", exist_ok=True)
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 
 @app.get("/")
