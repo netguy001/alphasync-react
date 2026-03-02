@@ -101,7 +101,7 @@ function EditModal({ strategy, onClose, onSave }) {
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
             <div className="relative w-full max-w-lg bg-surface-800 border border-edge/10 rounded-2xl shadow-2xl animate-slide-up">
                 <div className="flex items-center justify-between px-5 py-3 border-b border-edge/5">
-                    <h3 className="text-sm font-bold text-heading">Edit Strategy</h3>
+                    <h3 className="text-sm font-semibold text-heading">Edit Strategy</h3>
                     <button onClick={onClose} className="p-1 rounded hover:bg-surface-700 text-gray-500 hover:text-heading transition-colors">
                         <HiX className="w-4 h-4" />
                     </button>
@@ -270,7 +270,7 @@ export default function AlgoTradingPage() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold text-heading">Algo Trading</h1>
+                    <h1 className="text-2xl font-display font-semibold text-heading">Algo Trading</h1>
                     <p className="text-gray-500 text-sm mt-0.5">Create and manage automated trading strategies</p>
                 </div>
                 <button onClick={() => setShowCreate(!showCreate)} className="btn-primary text-sm inline-flex items-center gap-2">
@@ -281,8 +281,8 @@ export default function AlgoTradingPage() {
 
             {/* ── Create Form ──────────────────────────────────────────── */}
             {showCreate && (
-                <div className="glass-card p-6 !border-primary-500/15 animate-slide-up">
-                    <h3 className="text-sm font-semibold text-heading mb-4">Create New Strategy</h3>
+                <div className="rounded-xl border border-primary-500/15 bg-surface-900/60 p-6 animate-slide-up">
+                    <h3 className="section-title text-sm mb-4">Create New Strategy</h3>
                     <form onSubmit={handleCreate} className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
@@ -316,7 +316,7 @@ export default function AlgoTradingPage() {
                         {/* Strategy-specific parameters */}
                         <div className="bg-surface-900/40 rounded-xl p-4 border border-edge/5">
                             <div className="flex items-center justify-between mb-3">
-                                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                                <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wider">
                                     {typeMeta.label} Parameters
                                 </p>
                             </div>
@@ -354,12 +354,12 @@ export default function AlgoTradingPage() {
                     const paramFields = STRATEGY_PARAMS[s.strategy_type] || [];
 
                     return (
-                        <div key={s.id} className="glass-card-hover p-5 flex flex-col">
+                        <div key={s.id} className="rounded-xl border border-edge/5 bg-surface-900/60 hover:border-edge/15 transition-all p-5 flex flex-col">
                             <div className="flex items-start justify-between mb-2">
                                 <div className="flex-1 min-w-0">
                                     <h3 className="font-semibold text-heading text-sm truncate">{s.name}</h3>
                                     <div className="flex items-center gap-2 mt-1">
-                                        <span className="text-xs font-mono text-gray-500 bg-surface-700/50 px-1.5 py-0.5 rounded">{s.symbol?.replace('.NS', '')}</span>
+                                        <span className="text-xs font-price text-gray-500 bg-surface-700/50 px-1.5 py-0.5 rounded">{s.symbol?.replace('.NS', '')}</span>
                                         <span className="text-xs text-gray-500">{tMeta.label}</span>
                                     </div>
                                 </div>
@@ -389,11 +389,11 @@ export default function AlgoTradingPage() {
                             {paramFields.length > 0 && (
                                 <div className="flex flex-wrap gap-1.5 mb-3">
                                     {paramFields.map(f => (
-                                        <span key={f.key} className="text-[10px] font-mono bg-surface-900/60 text-gray-400 px-1.5 py-0.5 rounded border border-edge/5">
+                                        <span key={f.key} className="text-[10px] font-price bg-surface-900/60 text-gray-400 px-1.5 py-0.5 rounded border border-edge/5 tabular-nums">
                                             {f.label}: {params[f.key] ?? f.default}
                                         </span>
                                     ))}
-                                    <span className="text-[10px] font-mono bg-surface-900/60 text-gray-400 px-1.5 py-0.5 rounded border border-edge/5">
+                                    <span className="text-[10px] font-price bg-surface-900/60 text-gray-400 px-1.5 py-0.5 rounded border border-edge/5 tabular-nums">
                                         Qty: {params.quantity ?? 1}
                                     </span>
                                 </div>
@@ -410,18 +410,18 @@ export default function AlgoTradingPage() {
 
                             <div className="grid grid-cols-3 gap-2 mt-auto">
                                 <div className="text-center p-2 bg-surface-900/50 rounded-lg">
-                                    <div className="text-xs text-gray-600">Trades</div>
-                                    <div className="font-mono font-bold text-heading text-sm">{s.total_trades}</div>
+                                    <div className="metric-label text-[10px]">Trades</div>
+                                    <div className="font-price font-semibold text-heading text-sm tabular-nums">{s.total_trades}</div>
                                 </div>
                                 <div className="text-center p-2 bg-surface-900/50 rounded-lg">
-                                    <div className="text-xs text-gray-600">P&amp;L</div>
-                                    <div className={cn('font-mono font-bold text-sm', pnlColorClass(s.total_pnl))}>
+                                    <div className="metric-label text-[10px]">P&amp;L</div>
+                                    <div className={cn('font-price font-semibold text-sm tabular-nums', pnlColorClass(s.total_pnl))}>
                                         {s.total_pnl >= 0 ? '+' : ''}₹{Number(s.total_pnl).toFixed(0)}
                                     </div>
                                 </div>
                                 <div className="text-center p-2 bg-surface-900/50 rounded-lg">
-                                    <div className="text-xs text-gray-600">Win</div>
-                                    <div className="font-mono font-bold text-heading text-sm">{s.win_rate}%</div>
+                                    <div className="metric-label text-[10px]">Win</div>
+                                    <div className="font-price font-semibold text-heading text-sm tabular-nums">{s.win_rate}%</div>
                                 </div>
                             </div>
 
@@ -434,22 +434,47 @@ export default function AlgoTradingPage() {
                 })}
 
                 {strategies.length === 0 && !showCreate && (
-                    <div className="md:col-span-2 lg:col-span-3 glass-card p-12 text-center">
-                        <HiLightningBolt className="w-12 h-12 mx-auto mb-3 text-gray-600 opacity-50" />
-                        <p className="text-lg font-medium text-gray-400">No strategies yet</p>
-                        <p className="text-sm text-gray-500 mt-1 max-w-md mx-auto">
-                            Create your first algo trading strategy. Define entry/exit conditions
-                            using technical indicators. Strategies run automatically during market hours.
-                        </p>
+                    <div className="md:col-span-2 lg:col-span-3 space-y-6">
+                        {/* Empty state hero */}
+                        <div className="rounded-xl border border-edge/5 bg-surface-900/60 p-12 text-center">
+                            <HiLightningBolt className="w-12 h-12 mx-auto mb-3 text-gray-600 opacity-50" />
+                            <p className="text-lg font-display font-semibold text-gray-400">No strategies yet</p>
+                            <p className="text-sm text-gray-500 mt-1 max-w-md mx-auto">
+                                Create your first algo trading strategy. Define entry/exit conditions
+                                using technical indicators. Strategies run automatically during market hours.
+                            </p>
+                        </div>
+
+                        {/* Strategy template gallery */}
+                        <div>
+                            <h3 className="section-title text-xs mb-3">Strategy Templates</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                {STRATEGY_TYPES.map(st => (
+                                    <button
+                                        key={st.value}
+                                        onClick={() => { handleTypeChange(st.value); setForm(f => ({ ...f, strategy_type: st.value, parameters: getDefaultParams(st.value) })); setShowCreate(true); }}
+                                        className="rounded-xl border border-edge/5 bg-surface-900/40 hover:border-primary-500/25 hover:bg-surface-900/80 transition-all p-4 text-left group"
+                                    >
+                                        <div className="flex items-center gap-2 mb-1.5">
+                                            <span className="w-7 h-7 rounded-lg bg-primary-500/10 flex items-center justify-center text-primary-400">
+                                                <HiLightningBolt className="w-3.5 h-3.5" />
+                                            </span>
+                                            <span className="text-sm font-semibold text-heading group-hover:text-primary-400 transition-colors">{st.label}</span>
+                                        </div>
+                                        <p className="text-xs text-gray-500 leading-relaxed">{st.desc}</p>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
                     </div>
                 )}
             </div>
 
             {/* ── Strategy Logs ─────────────────────────────────────────── */}
             {selectedStrategy && (
-                <div className="glass-card p-5 animate-slide-up">
+                <div className="rounded-xl border border-edge/5 bg-surface-900/60 p-5 animate-slide-up">
                     <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Strategy Logs</h3>
+                        <h3 className="section-title text-xs">Strategy Logs</h3>
                         <button onClick={() => { setSelectedStrategy(null); setLogs([]); }}
                             className="text-gray-500 hover:text-heading text-sm transition-colors inline-flex items-center gap-1">
                             <HiX className="w-3.5 h-3.5" /> Close
@@ -459,7 +484,7 @@ export default function AlgoTradingPage() {
                         <div className="space-y-1 max-h-[300px] overflow-y-auto">
                             {logs.map(l => (
                                 <div key={l.id} className="flex items-start gap-3 py-2 text-sm border-b border-edge/[0.03]">
-                                    <span className={cn('text-xs font-mono px-1.5 py-0.5 rounded flex-shrink-0',
+                                    <span className={cn('text-xs font-price px-1.5 py-0.5 rounded flex-shrink-0 tabular-nums',
                                         l.level === 'ERROR' ? 'bg-bear/10 text-bear' :
                                             l.level === 'TRADE' ? 'bg-primary-500/10 text-primary-400' :
                                                 l.level === 'WARNING' ? 'bg-amber-500/10 text-amber-400' :

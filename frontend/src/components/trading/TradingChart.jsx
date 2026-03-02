@@ -13,16 +13,16 @@ import {
 
 const TREND_STYLE = {
     BULLISH: {
-        badge: 'bg-emerald-500/15 border-emerald-500/25 text-emerald-400',
-        icon: '▲', label: 'BULLISH', glow: 'shadow-emerald-500/10',
+        cls: 'signal-pill signal-pill-bullish',
+        icon: '▲', label: 'BULLISH',
     },
     BEARISH: {
-        badge: 'bg-red-500/15 border-red-500/25 text-red-400',
-        icon: '▼', label: 'BEARISH', glow: 'shadow-red-500/10',
+        cls: 'signal-pill signal-pill-bearish',
+        icon: '▼', label: 'BEARISH',
     },
     NEUTRAL: {
-        badge: 'bg-amber-500/10 border-amber-500/20 text-amber-400',
-        icon: '—', label: 'NEUTRAL', glow: 'shadow-amber-500/10',
+        cls: 'signal-pill signal-pill-neutral',
+        icon: '—', label: 'NEUTRAL',
     },
 };
 
@@ -106,7 +106,7 @@ function TimeframeBar({ period, onPeriodChange }) {
                     key={key}
                     onClick={() => onPeriodChange(key)}
                     className={cn(
-                        'px-2 py-1 text-[11px] font-semibold rounded transition-colors',
+                        'px-2 py-1 text-[11px] font-semibold font-price rounded transition-colors',
                         period === key
                             ? 'bg-primary-500/20 text-primary-400'
                             : 'text-gray-500 hover:text-gray-300 hover:bg-surface-800/60'
@@ -507,12 +507,13 @@ const TradingChart = memo(function TradingChart({
             <div className="flex items-center gap-2 px-2.5 py-1.5 border-b border-edge/5 bg-surface-900/30 flex-shrink-0" ref={menuRef}>
                 {/* Timeframes — scrollable independently so dropdowns aren't clipped */}
                 {onPeriodChange && (
-                    <div className="overflow-x-auto no-scrollbar flex-shrink min-w-0">
-                        <TimeframeBar period={period} onPeriodChange={onPeriodChange} />
-                    </div>
+                    <>
+                        <div className="overflow-x-auto no-scrollbar flex-shrink min-w-0">
+                            <TimeframeBar period={period} onPeriodChange={onPeriodChange} />
+                        </div>
+                        <div className="w-px h-4 bg-edge/10 flex-shrink-0" />
+                    </>
                 )}
-
-                <div className="w-px h-4 bg-edge/10 flex-shrink-0" />
 
                 {/* Indicators button */}
                 <div className="relative flex-shrink-0">
@@ -600,17 +601,14 @@ const TradingChart = memo(function TradingChart({
 
                 {/* Trend overlay badges — top-right */}
                 {(candles.length > 0 && !isLoading) && (
-                    <div className="absolute top-3 right-3 z-10 pointer-events-none select-none flex flex-col items-end gap-1">
+                    <div className="absolute top-3 right-3 z-10 pointer-events-none select-none flex flex-col items-end gap-1.5">
                         {trend && (
-                            <div className={cn(
-                                'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold tracking-wide backdrop-blur-md shadow-lg',
-                                trend.badge, trend.glow
-                            )}>
+                            <div className={cn(trend.cls, 'text-xs font-bold backdrop-blur-md shadow-lg')}>
                                 <span className="text-sm leading-none">{trend.icon}</span>
                                 <span>Multi-Strategy</span>
                                 <span>{trend.label}</span>
                                 {confidence > 0 && (
-                                    <span className="opacity-60 font-medium ml-0.5">{Math.round(confidence)}%</span>
+                                    <span className="opacity-60 font-price font-medium ml-0.5">{Math.round(confidence)}%</span>
                                 )}
                             </div>
                         )}

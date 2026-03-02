@@ -402,7 +402,7 @@ export default function Navbar({ onMenuToggle }) {
                                                 <div className="text-xs text-gray-500 truncate">{stock.name}</div>
                                             </div>
                                             {/* FIX: NSE/BSE badge — explicit colors for light + dark mode */}
-                                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded flex-shrink-0 bg-gray-200 text-gray-600 dark:bg-surface-700 dark:text-gray-400">
+                                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded flex-shrink-0 bg-gray-200 text-gray-600 dark:bg-surface-700 dark:text-gray-400">
                                                 {stock.exchange}
                                             </span>
                                         </button>
@@ -487,7 +487,7 @@ export default function Navbar({ onMenuToggle }) {
                     >
                         <HiOutlineBell className={cn('w-5 h-5 transition-transform', unreadCount > 0 && 'animate-[bell-ring_0.5s_ease-in-out]')} />
                         {unreadCount > 0 && (
-                            <span className="absolute top-1 right-1 min-w-[16px] h-4 px-1 rounded-full bg-primary-500 text-[10px] font-bold text-white flex items-center justify-center leading-none">
+                            <span className="absolute top-1 right-1 min-w-[16px] h-4 px-1 rounded-full bg-primary-500 text-[10px] font-semibold text-white flex items-center justify-center leading-none">
                                 {unreadCount > 9 ? '9+' : unreadCount}
                             </span>
                         )}

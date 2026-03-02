@@ -45,7 +45,7 @@ function MobileTradeBar({
 
             {/* Symbol + Price */}
             <div className="flex-1 min-w-0 flex items-center gap-2">
-                <span className="text-sm font-bold text-heading truncate">
+                <span className="text-sm font-semibold text-heading truncate">
                     {symbol?.replace('.NS', '')}
                 </span>
                 {price > 0 && (

@@ -11,33 +11,33 @@ import { PanelContainer } from '.';
 function OrderHistoryPanel({ orders = [], className }) {
     return (
         <PanelContainer title="Orders" noPadding className={className}
-            actions={<span className="text-[10px] text-gray-600 font-mono">{orders.length}</span>}
+            actions={<span className="text-[10px] text-gray-600 font-price tabular-nums">{orders.length}</span>}
         >
             {orders.length > 0 ? (
                 <div className="overflow-x-auto">
                     <table className="w-full text-xs min-w-[600px]">
                         <thead>
-                            <tr className="text-gray-500 uppercase">
-                                <th className="text-left px-3 pb-2 pt-2 font-medium">Symbol</th>
-                                <th className="text-left px-3 pb-2 pt-2 font-medium">Side</th>
-                                <th className="text-left px-3 pb-2 pt-2 font-medium">Type</th>
-                                <th className="text-right px-3 pb-2 pt-2 font-medium">Qty</th>
-                                <th className="text-right px-3 pb-2 pt-2 font-medium">Price</th>
-                                <th className="text-right px-3 pb-2 pt-2 font-medium">Status</th>
+                            <tr>
+                                <th className="text-left px-3 pb-2 pt-2 metric-label">Symbol</th>
+                                <th className="text-left px-3 pb-2 pt-2 metric-label">Side</th>
+                                <th className="text-left px-3 pb-2 pt-2 metric-label">Type</th>
+                                <th className="text-right px-3 pb-2 pt-2 metric-label">Qty</th>
+                                <th className="text-right px-3 pb-2 pt-2 metric-label">Price</th>
+                                <th className="text-right px-3 pb-2 pt-2 metric-label">Status</th>
                             </tr>
                         </thead>
                         <tbody>
                             {orders.map((o, i) => (
-                                <tr key={o.id || i} className="border-t border-edge/[0.02]">
+                                <tr key={o.id || i} className="border-t border-edge/[0.03] hover:bg-white/[0.02] transition-colors">
                                     <td className="px-3 py-1.5 font-semibold text-heading">{o.symbol?.replace('.NS', '')}</td>
                                     <td className={cn('px-3 py-1.5 font-semibold', o.side === 'BUY' ? 'text-bull' : 'text-bear')}>{o.side}</td>
                                     <td className="px-3 py-1.5 text-gray-400">{o.order_type}</td>
-                                    <td className="px-3 py-1.5 text-right font-mono text-gray-300">{o.quantity}</td>
-                                    <td className="px-3 py-1.5 text-right font-mono text-heading">
+                                    <td className="px-3 py-1.5 text-right font-price text-gray-300 tabular-nums">{o.quantity}</td>
+                                    <td className="px-3 py-1.5 text-right font-price text-heading tabular-nums">
                                         {formatPrice(o.filled_price ?? o.price ?? null)}
                                     </td>
                                     <td className="px-3 py-1.5 text-right">
-                                        <span className={cn('text-[11px] px-1.5 py-0.5 rounded font-medium',
+                                        <span className={cn('text-[11px] px-2 py-0.5 rounded-full font-medium',
                                             ORDER_STATUS_CLASS[o.status] || ORDER_STATUS_CLASS.PENDING
                                         )}>
                                             {o.status}

@@ -4,7 +4,7 @@ import { cn } from '../../utils/cn';
 import { formatCurrency, formatPrice, formatPercent, pnlColorClass } from '../../utils/formatters';
 import Skeleton from '../ui/Skeleton';
 import Badge from '../ui/Badge';
-import { HiTrendingUp, HiTrendingDown, HiCurrencyRupee, HiDownload, HiSelector, HiSortAscending, HiSortDescending } from 'react-icons/hi';
+import { HiCurrencyRupee, HiDownload, HiSelector, HiSortAscending, HiSortDescending } from 'react-icons/hi';
 
 /** Export holdings data to a CSV file */
 function exportToCSV(holdings) {
@@ -80,9 +80,9 @@ const HoldingsTable = memo(function HoldingsTable({ holdings = [], isLoading = f
     }
 
     return (
-        <div className="glass-card p-5">
+        <div className="rounded-xl border border-edge/5 bg-surface-900/60 p-5">
             <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                <h2 className="section-title text-xs">
                     Holdings ({holdings.length})
                 </h2>
                 {holdings.length > 0 && (
@@ -101,65 +101,70 @@ const HoldingsTable = memo(function HoldingsTable({ holdings = [], isLoading = f
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm min-w-[700px]">
                         <thead>
-                            <tr className="text-gray-500 text-xs uppercase border-b border-edge/5">
+                            <tr className="border-b border-edge/5">
                                 <th
-                                    className="text-left py-3 font-medium cursor-pointer hover:text-gray-300 select-none"
+                                    className="text-left py-3 text-[11px] font-medium tracking-wider uppercase text-slate-500 cursor-pointer hover:text-gray-300 select-none"
                                     onClick={() => handleSort('symbol')}
                                 >
                                     <span className="flex items-center gap-1">Symbol <SortIcon col="symbol" /></span>
                                 </th>
-                                <th className="text-right py-3 font-medium">Qty</th>
-                                <th className="text-right py-3 font-medium">Avg</th>
-                                <th className="text-right py-3 font-medium">LTP</th>
-                                <th className="text-right py-3 font-medium">Invested</th>
+                                <th className="text-right py-3 text-[11px] font-medium tracking-wider uppercase text-slate-500">Qty</th>
+                                <th className="text-right py-3 text-[11px] font-medium tracking-wider uppercase text-slate-500">Avg</th>
+                                <th className="text-right py-3 text-[11px] font-medium tracking-wider uppercase text-slate-500">LTP</th>
+                                <th className="text-right py-3 text-[11px] font-medium tracking-wider uppercase text-slate-500">Invested</th>
                                 <th
-                                    className="text-right py-3 font-medium cursor-pointer hover:text-gray-300 select-none"
+                                    className="text-right py-3 text-[11px] font-medium tracking-wider uppercase text-slate-500 cursor-pointer hover:text-gray-300 select-none"
                                     onClick={() => handleSort('current_value')}
                                 >
                                     <span className="flex items-center justify-end gap-1">Current <SortIcon col="current_value" /></span>
                                 </th>
                                 <th
-                                    className="text-right py-3 font-medium cursor-pointer hover:text-gray-300 select-none"
+                                    className="text-right py-3 text-[11px] font-medium tracking-wider uppercase text-slate-500 cursor-pointer hover:text-gray-300 select-none"
                                     onClick={() => handleSort('pnl')}
                                 >
                                     <span className="flex items-center justify-end gap-1">P&L <SortIcon col="pnl" /></span>
                                 </th>
                                 <th
-                                    className="text-right py-3 font-medium cursor-pointer hover:text-gray-300 select-none"
+                                    className="text-right py-3 text-[11px] font-medium tracking-wider uppercase text-slate-500 cursor-pointer hover:text-gray-300 select-none"
                                     onClick={() => handleSort('pnl_percent')}
                                 >
                                     <span className="flex items-center justify-end gap-1">P&L % <SortIcon col="pnl_percent" /></span>
                                 </th>
-                                <th className="text-right py-3 font-medium">Actions</th>
+                                <th className="text-right py-3 text-[11px] font-medium tracking-wider uppercase text-slate-500">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {sorted.map((h, i) => {
                                 const pnlPos = (h.pnl ?? 0) >= 0;
+                                const sym = h.symbol?.replace('.NS', '') || '';
+                                const initials = sym.slice(0, 2).toUpperCase();
                                 return (
                                     <tr
                                         key={h.symbol || i}
-                                        className="border-b border-edge/[0.025] hover:bg-overlay/[0.025] transition-colors group"
+                                        className="border-b border-edge/[0.025] hover:bg-white/[0.02] transition-colors group"
                                     >
                                         <td className="py-3">
-                                            <div className="font-semibold text-heading">
-                                                {h.symbol?.replace('.NS', '')}
+                                            <div className="flex items-center gap-2.5">
+                                                <div className="w-8 h-8 rounded-lg bg-primary-500/10 border border-primary-500/20 flex items-center justify-center text-[11px] font-semibold text-primary-400 flex-shrink-0">
+                                                    {initials}
+                                                </div>
+                                                <div>
+                                                    <div className="font-medium text-slate-100">{sym}</div>
+                                                    <div className="text-xs font-normal text-slate-500">{h.company_name || h.exchange}</div>
+                                                </div>
                                             </div>
-                                            <div className="text-xs text-gray-600">{h.company_name || h.exchange}</div>
                                         </td>
-                                        <td className="py-3 text-right font-mono text-gray-300">{h.quantity}</td>
-                                        <td className="py-3 text-right font-mono text-gray-300">{formatPrice(h.avg_price)}</td>
-                                        <td className="py-3 text-right font-mono text-heading font-semibold">{formatPrice(h.current_price)}</td>
-                                        <td className="py-3 text-right font-mono text-gray-300">{formatCurrency(h.invested_value)}</td>
-                                        <td className="py-3 text-right font-mono text-heading">{formatCurrency(h.current_value)}</td>
-                                        <td className={cn('py-3 text-right font-mono font-semibold', pnlColorClass(h.pnl ?? 0))}>
+                                        <td className="py-3 text-right font-price font-normal text-slate-300 tabular-nums">{h.quantity}</td>
+                                        <td className="py-3 text-right font-price font-normal text-slate-300 tabular-nums">{formatPrice(h.avg_price)}</td>
+                                        <td className="py-3 text-right font-price text-slate-100 font-medium tabular-nums">{formatPrice(h.current_price)}</td>
+                                        <td className="py-3 text-right font-price font-normal text-slate-300 tabular-nums">{formatCurrency(h.invested_value)}</td>
+                                        <td className="py-3 text-right font-price text-heading tabular-nums">{formatCurrency(h.current_value)}</td>
+                                        <td className={cn('py-3 text-right font-price font-medium tabular-nums', pnlColorClass(h.pnl ?? 0))}>
                                             {pnlPos ? '+' : ''}{formatCurrency(h.pnl)}
                                         </td>
-                                        <td className={cn('py-3 text-right font-mono font-semibold', pnlColorClass(h.pnl_percent ?? 0))}>
+                                        <td className={cn('py-3 text-right font-price font-medium tabular-nums', pnlColorClass(h.pnl_percent ?? 0))}>
                                             <div className="flex items-center justify-end gap-1">
-                                                {pnlPos
-                                                    ? <HiTrendingUp className="w-3 h-3" />
-                                                    : <HiTrendingDown className="w-3 h-3" />}
+                                                <span className="text-[10px]">{pnlPos ? '\u25b2' : '\u25bc'}</span>
                                                 {formatPercent(h.pnl_percent, 2)}
                                             </div>
                                         </td>
@@ -185,14 +190,14 @@ const HoldingsTable = memo(function HoldingsTable({ holdings = [], isLoading = f
                         </tbody>
                         {/* Pinned totals row */}
                         <tfoot>
-                            <tr className="border-t-2 border-edge/10 text-xs font-semibold">
-                                <td colSpan={4} className="pt-3 text-gray-500">Total</td>
-                                <td className="pt-3 text-right font-mono text-gray-300">{formatCurrency(totals.invested)}</td>
-                                <td className="pt-3 text-right font-mono text-heading">{formatCurrency(totals.current)}</td>
-                                <td className={cn('pt-3 text-right font-mono', pnlColorClass(totals.pnl))}>
+                            <tr className="border-t-2 border-edge/10 text-xs font-medium">
+                                <td colSpan={4} className="pt-3 text-slate-500">Total</td>
+                                <td className="pt-3 text-right font-price text-gray-300 tabular-nums">{formatCurrency(totals.invested)}</td>
+                                <td className="pt-3 text-right font-price text-heading tabular-nums">{formatCurrency(totals.current)}</td>
+                                <td className={cn('pt-3 text-right font-price tabular-nums', pnlColorClass(totals.pnl))}>
                                     {totals.pnl >= 0 ? '+' : ''}{formatCurrency(totals.pnl)}
                                 </td>
-                                <td className={cn('pt-3 text-right font-mono', pnlColorClass(totals.pnl))}>
+                                <td className={cn('pt-3 text-right font-price tabular-nums', pnlColorClass(totals.pnl))}>
                                     {formatPercent(totals.invested > 0 ? (totals.pnl / totals.invested) * 100 : 0)}
                                 </td>
                                 <td />

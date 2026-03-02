@@ -86,6 +86,8 @@ export default {
             fontFamily: {
                 sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
                 mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
+                price: ['DM Mono', 'JetBrains Mono', 'monospace'],
+                display: ['Syne', 'Inter', 'sans-serif'],
             },
             // ── Trading-specific font sizes ───────────────────────────────────
             fontSize: {

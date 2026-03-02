@@ -30,44 +30,44 @@ export default function PortfolioSummary({ summary, isLoading }) {
         <div className="space-y-4">
             {/* Stat grid */}
             <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-                <div className="stat-card">
-                    <span className="text-xs text-gray-500 uppercase tracking-wider">Total Capital</span>
-                    <span className="text-xl font-bold text-heading font-mono">{formatCurrency(totalCapital)}</span>
+                <div className="kpi-card">
+                    <span className="metric-label">Total Capital</span>
+                    <span className="text-xl font-semibold text-heading font-price tabular-nums">{formatCurrency(totalCapital)}</span>
                 </div>
-                <div className="stat-card">
-                    <span className="text-xs text-gray-500 uppercase tracking-wider">Available Cash</span>
-                    <span className="text-xl font-bold text-heading font-mono">{formatCurrency(availableCash)}</span>
+                <div className="kpi-card">
+                    <span className="metric-label">Available Cash</span>
+                    <span className="text-xl font-semibold text-heading font-price tabular-nums">{formatCurrency(availableCash)}</span>
                 </div>
-                <div className="stat-card">
-                    <span className="text-xs text-gray-500 uppercase tracking-wider">Invested</span>
-                    <span className="text-xl font-bold text-heading font-mono">{formatCurrency(totalInvested)}</span>
-                    <span className="text-xs text-gray-500">{investedPct.toFixed(1)}% deployed</span>
+                <div className="kpi-card">
+                    <span className="metric-label">Invested</span>
+                    <span className="text-xl font-semibold text-heading font-price tabular-nums">{formatCurrency(totalInvested)}</span>
+                    <span className="text-xs text-gray-500 font-price tabular-nums">{investedPct.toFixed(1)}% deployed</span>
                 </div>
-                <div className="stat-card">
-                    <span className="text-xs text-gray-500 uppercase tracking-wider">Current Value</span>
-                    <span className="text-xl font-bold text-heading font-mono">{formatCurrency(currentValue)}</span>
+                <div className="kpi-card">
+                    <span className="metric-label">Current Value</span>
+                    <span className="text-xl font-semibold text-heading font-price tabular-nums">{formatCurrency(currentValue)}</span>
                 </div>
                 <PnLCard label="Total P&L" value={totalPnl} percent={totalPnlPct} />
             </div>
 
-            {/* Capital allocation bar */}
-            <div className="glass-card p-5">
-                <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+            {/* Capital allocation bar — segmented */}
+            <div className="rounded-xl border border-edge/5 bg-surface-900/60 p-5">
+                <h2 className="section-title text-xs mb-3">
                     Capital Allocation
                 </h2>
-                <div className="w-full h-3 bg-surface-800 rounded-full overflow-hidden flex">
+                <div className="w-full h-2.5 bg-surface-800 rounded-full overflow-hidden flex gap-px">
                     <div
                         className="bg-primary-500 h-full rounded-l-full transition-all duration-700"
                         style={{ width: `${investedPct}%` }}
                     />
                     <div
-                        className="bg-accent-emerald/30 h-full rounded-r-full transition-all duration-700"
+                        className="bg-emerald-500/40 h-full rounded-r-full transition-all duration-700"
                         style={{ width: `${100 - investedPct}%` }}
                     />
                 </div>
                 <div className="flex justify-between mt-2 text-xs">
-                    <span className="text-primary-400">Invested: {investedPct.toFixed(1)}%</span>
-                    <span className="text-accent-emerald">Cash: {(100 - investedPct).toFixed(1)}%</span>
+                    <span className="text-primary-400 font-price tabular-nums">Invested: {investedPct.toFixed(1)}%</span>
+                    <span className="text-emerald-400 font-price tabular-nums">Cash: {(100 - investedPct).toFixed(1)}%</span>
                 </div>
             </div>
         </div>

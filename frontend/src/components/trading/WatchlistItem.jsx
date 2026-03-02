@@ -1,7 +1,6 @@
 import { memo, useRef, useEffect, useState } from 'react';
 import { cn } from '../../utils/cn';
 import { formatPrice, formatPercent } from '../../utils/formatters';
-import { HiTrendingUp, HiTrendingDown } from 'react-icons/hi';
 
 /**
  * Single watchlist row.
@@ -12,6 +11,7 @@ import { HiTrendingUp, HiTrendingDown } from 'react-icons/hi';
  * FIXES:
  * - Removed hover jump/wiggle animation (was caused by transform/translate on hover)
  * - NSE/BSE badge now uses explicit colors visible in both dark & light mode
+ * - Uses font-price for numeric values, ▲/▼ arrows for change direction
  */
 const WatchlistItem = memo(function WatchlistItem({
     item,
@@ -50,13 +50,13 @@ const WatchlistItem = memo(function WatchlistItem({
             onMouseEnter={() => setHovered(true)}
             onMouseLeave={() => setHovered(false)}
             className={cn(
-                // FIX: removed any transform/translate classes that caused jump on hover
                 'relative flex items-center justify-between px-3 py-2 cursor-pointer',
                 'border-b border-edge/[0.03]',
-                // Simple background transition only — no movement
                 'transition-colors duration-150',
-                'hover:bg-white/[0.025]',
-                isSelected && 'bg-primary-600/10 border-l-2 border-l-primary-500',
+                'hover:bg-white/[0.03]',
+                isSelected
+                    ? 'bg-primary-600/10 border-l-[3px] border-l-primary-500'
+                    : 'border-l-[3px] border-l-transparent',
                 flashClass
             )}
         >
@@ -64,10 +64,8 @@ const WatchlistItem = memo(function WatchlistItem({
             <div className="flex-1 min-w-0">
                 <div className="font-semibold text-[13px] text-heading truncate">{symbol}</div>
                 <div className="flex items-center gap-1 mt-0.5">
-                    {/* FIX: Exchange badge with explicit colors for both dark & light mode */}
                     <span className={cn(
-                        'inline-flex items-center px-1 py-0 rounded text-[9px] font-bold leading-4 tracking-wide',
-                        // Dark mode: subtle surface. Light mode: explicit gray bg + dark text
+                        'inline-flex items-center px-1 py-0 rounded text-[9px] font-medium leading-4 tracking-wide',
                         'bg-gray-200 text-gray-600',
                         'dark:bg-surface-700 dark:text-gray-400',
                     )}>
@@ -84,19 +82,13 @@ const WatchlistItem = memo(function WatchlistItem({
             {/* ── Right: price+change OR buy/sell on hover ─────────────────── */}
             <div className="flex-shrink-0 ml-1">
                 {hovered ? (
-                    /* ── Hover state: Buy / Sell / Remove buttons ────────────── */
                     <div className="flex items-center gap-1.5">
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
                                 onBuy?.(item.symbol);
                             }}
-                            className={cn(
-                                'px-2.5 py-1 rounded-md text-[11px] font-bold',
-                                'bg-emerald-500 hover:bg-emerald-400',
-                                'text-white transition-colors duration-150',
-                                'leading-none'
-                            )}
+                            className="px-2.5 py-1 rounded-md text-[11px] font-bold bg-emerald-500 hover:bg-emerald-400 text-white transition-colors duration-150 leading-none"
                         >
                             BUY
                         </button>
@@ -105,16 +97,10 @@ const WatchlistItem = memo(function WatchlistItem({
                                 e.stopPropagation();
                                 onSell?.(item.symbol);
                             }}
-                            className={cn(
-                                'px-2 py-1 rounded-md text-[11px] font-bold',
-                                'bg-red-500 hover:bg-red-400',
-                                'text-white transition-colors duration-150',
-                                'leading-none'
-                            )}
+                            className="px-2 py-1 rounded-md text-[11px] font-bold bg-red-500 hover:bg-red-400 text-white transition-colors duration-150 leading-none"
                         >
                             SELL
                         </button>
-                        {/* Remove (×) button */}
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
@@ -129,18 +115,15 @@ const WatchlistItem = memo(function WatchlistItem({
                         </button>
                     </div>
                 ) : (
-                    /* ── Default state: price + change% ──────────────────────── */
                     <div className="flex flex-col items-end">
-                        <span className="text-[13px] font-mono font-semibold text-heading tabular-nums">
+                        <span className="text-[13px] font-price font-semibold text-heading tabular-nums">
                             {price?.price != null ? formatPrice(price.price) : '—'}
                         </span>
                         <span className={cn(
-                            'flex items-center gap-0.5 text-[10px] font-mono',
+                            'flex items-center gap-0.5 text-[10px] font-price tabular-nums',
                             changePositive ? 'text-bull' : 'text-bear'
                         )}>
-                            {changePositive
-                                ? <HiTrendingUp className="w-2.5 h-2.5" />
-                                : <HiTrendingDown className="w-2.5 h-2.5" />}
+                            <span className="text-[9px] leading-none">{changePositive ? '▲' : '▼'}</span>
                             {price?.change_percent != null
                                 ? formatPercent(price.change_percent, 2)
                                 : '—'}

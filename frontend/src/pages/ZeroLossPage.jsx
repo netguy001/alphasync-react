@@ -4,8 +4,7 @@ import { cn } from '../utils/cn';
 import { pnlColorClass, formatPrice, formatPercent } from '../utils/formatters';
 import { useZeroLossStore } from '../stores/useZeroLossStore';
 import {
-    HiShieldCheck, HiPlay, HiPause, HiTrendingUp, HiTrendingDown,
-    HiMinusCircle, HiRefresh, HiCog,
+    HiShieldCheck, HiPlay, HiPause, HiRefresh,
 } from 'react-icons/hi';
 
 // ── Confidence Gauge ──────────────────────────────────────────────────────────
@@ -48,8 +47,8 @@ function ConfidenceGauge({ score, size = 140 }) {
                     x={size / 2}
                     y={size / 2}
                     textAnchor="middle"
-                    className="fill-heading text-2xl font-bold"
-                    style={{ fontSize: '28px', fontFamily: 'monospace' }}
+                    className="fill-heading text-2xl font-semibold"
+                    style={{ fontSize: '28px', fontFamily: 'DM Mono, monospace' }}
                 >
                     {Math.round(progress)}
                 </text>
@@ -71,20 +70,18 @@ function ConfidenceGauge({ score, size = 140 }) {
 
 function DirectionBadge({ direction }) {
     const config = {
-        LONG: { icon: HiTrendingUp, color: 'text-emerald-400 bg-emerald-500/15 border-emerald-500/25' },
-        SHORT: { icon: HiTrendingDown, color: 'text-red-400 bg-red-500/15 border-red-500/25' },
-        NO_TRADE: { icon: HiMinusCircle, color: 'text-amber-400 bg-amber-500/10 border-amber-500/20' },
-        BULLISH: { icon: HiTrendingUp, color: 'text-emerald-400 bg-emerald-500/15 border-emerald-500/25' },
-        BEARISH: { icon: HiTrendingDown, color: 'text-red-400 bg-red-500/15 border-red-500/25' },
-        NEUTRAL: { icon: HiMinusCircle, color: 'text-gray-400 bg-gray-500/10 border-gray-500/20' },
+        LONG: { arrow: '▲', cls: 'signal-pill signal-pill-bullish' },
+        SHORT: { arrow: '▼', cls: 'signal-pill signal-pill-bearish' },
+        NO_TRADE: { arrow: '—', cls: 'signal-pill signal-pill-neutral' },
+        BULLISH: { arrow: '▲', cls: 'signal-pill signal-pill-bullish' },
+        BEARISH: { arrow: '▼', cls: 'signal-pill signal-pill-bearish' },
+        NEUTRAL: { arrow: '—', cls: 'signal-pill signal-pill-neutral' },
     };
     const c = config[direction] || config.NEUTRAL;
-    const Icon = c.icon;
 
     return (
-        <span className={cn('inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-bold', c.color)}>
-            <Icon className="w-3.5 h-3.5" />
-            {direction}
+        <span className={cn(c.cls, 'text-xs font-semibold')}>
+            {c.arrow} {direction}
         </span>
     );
 }
@@ -99,7 +96,7 @@ function StatusBadge({ status }) {
         BREAKEVEN: 'text-amber-400 bg-amber-500/10',
     };
     return (
-        <span className={cn('px-2 py-0.5 rounded text-[10px] font-bold uppercase', colors[status] || colors.WAITING)}>
+        <span className={cn('px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide', colors[status] || colors.WAITING)}>
             {status}
         </span>
     );
@@ -113,7 +110,7 @@ function BreakdownItem({ label, score, max, color }) {
         <div className="space-y-0.5">
             <div className="flex justify-between text-[11px]">
                 <span className="text-gray-400">{label}</span>
-                <span className="text-heading font-mono">{score}/{max}</span>
+                <span className="text-heading font-price tabular-nums">{score}/{max}</span>
             </div>
             <div className="h-1.5 bg-surface-800 rounded-full overflow-hidden">
                 <div
@@ -190,7 +187,7 @@ export default function ZeroLossPage() {
                         <HiShieldCheck className="w-6 h-6 text-emerald-400" />
                     </div>
                     <div>
-                        <h1 className="text-xl font-bold text-heading">ZeroLoss Strategy</h1>
+                        <h1 className="text-xl font-display font-semibold text-heading">ZeroLoss Strategy</h1>
                         <p className="text-xs text-gray-500 mt-0.5">
                             Confidence-gated • Break-even protected • Two outcomes only: Profit or No Loss
                         </p>
@@ -199,7 +196,7 @@ export default function ZeroLossPage() {
 
                 <div className="flex items-center gap-3">
                     {lastUpdateStr && (
-                        <span className="text-[10px] text-gray-600 font-mono flex items-center gap-1.5">
+                        <span className="text-[10px] text-gray-600 font-price tabular-nums flex items-center gap-1.5">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                             LIVE · {lastUpdateStr}
                         </span>
@@ -239,9 +236,9 @@ export default function ZeroLossPage() {
                     { label: 'Loss Trades', value: 0, color: 'text-emerald-400' },
                     { label: "Today's P&L", value: `₹${formatPrice(stats.today_pnl ?? 0)}`, color: pnlColorClass(stats.today_pnl ?? 0) },
                 ].map((card, i) => (
-                    <div key={i} className="rounded-xl border border-edge/5 bg-surface-900/60 p-3.5 space-y-1">
-                        <div className="text-[11px] text-gray-500 uppercase tracking-wider">{card.label}</div>
-                        <div className={cn('text-lg font-bold font-mono', card.color || 'text-heading')}>
+                    <div key={i} className="kpi-card p-3.5 space-y-1">
+                        <div className="metric-label">{card.label}</div>
+                        <div className={cn('text-lg font-semibold font-price tabular-nums', card.color || 'text-heading')}>
                             {card.value}
                         </div>
                     </div>
@@ -252,7 +249,7 @@ export default function ZeroLossPage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 {/* Confidence Panel */}
                 <div className="lg:col-span-2 rounded-xl border border-edge/5 bg-surface-900/60 p-4">
-                    <h3 className="text-sm font-semibold text-heading mb-4">Live Confidence Scores</h3>
+                    <h3 className="section-title text-xs mb-4">Live Confidence Scores</h3>
 
                     {symbolEntries.length === 0 ? (
                         <div className="text-center text-gray-600 py-8 text-sm">
@@ -263,7 +260,7 @@ export default function ZeroLossPage() {
                             {symbolEntries.map(([symbol, data]) => (
                                 <div key={symbol} className="rounded-xl border border-edge/10 bg-surface-800/40 p-4 space-y-3">
                                     <div className="flex items-center justify-between">
-                                        <span className="text-sm font-bold text-heading">
+                                        <span className="text-sm font-semibold text-heading">
                                             {symbol.replace('.NS', '')}
                                         </span>
                                         <DirectionBadge direction={data.direction} />
@@ -294,7 +291,7 @@ export default function ZeroLossPage() {
 
                 {/* Active Positions */}
                 <div className="rounded-xl border border-edge/5 bg-surface-900/60 p-4">
-                    <h3 className="text-sm font-semibold text-heading mb-4">Active Positions</h3>
+                    <h3 className="section-title text-xs mb-4">Active Positions</h3>
 
                     {Object.keys(positions).length === 0 ? (
                         <div className="text-center text-gray-600 py-8 text-sm">
@@ -305,7 +302,7 @@ export default function ZeroLossPage() {
                             {Object.entries(positions).map(([symbol, pos]) => (
                                 <div key={symbol} className="rounded-lg border border-edge/10 bg-surface-800/40 p-3 space-y-2">
                                     <div className="flex items-center justify-between">
-                                        <span className="text-sm font-bold text-heading">
+                                        <span className="text-sm font-semibold text-heading">
                                             {symbol.replace('.NS', '')}
                                         </span>
                                         <div className="flex items-center gap-2">
@@ -316,16 +313,16 @@ export default function ZeroLossPage() {
 
                                     <div className="grid grid-cols-3 gap-2 text-[11px]">
                                         <div>
-                                            <span className="text-gray-500 block">Entry</span>
-                                            <span className="text-heading font-mono">{formatPrice(pos.entry_price)}</span>
+                                            <span className="metric-label block">Entry</span>
+                                            <span className="text-heading font-price tabular-nums">{formatPrice(pos.entry_price)}</span>
                                         </div>
                                         <div>
-                                            <span className="text-gray-500 block">Stop Loss</span>
-                                            <span className="text-amber-400 font-mono">{formatPrice(pos.stop_loss)}</span>
+                                            <span className="metric-label block">Stop Loss</span>
+                                            <span className="text-amber-400 font-price tabular-nums">{formatPrice(pos.stop_loss)}</span>
                                         </div>
                                         <div>
-                                            <span className="text-gray-500 block">Target</span>
-                                            <span className="text-emerald-400 font-mono">{formatPrice(pos.target)}</span>
+                                            <span className="metric-label block">Target</span>
+                                            <span className="text-emerald-400 font-price tabular-nums">{formatPrice(pos.target)}</span>
                                         </div>
                                     </div>
 
@@ -343,7 +340,7 @@ export default function ZeroLossPage() {
             {/* ── Performance Summary ─────────────────────────────────── */}
             {perfSummary && (
                 <div className="rounded-xl border border-edge/5 bg-surface-900/60 p-4">
-                    <h3 className="text-sm font-semibold text-heading mb-4">30-Day Performance</h3>
+                    <h3 className="section-title text-xs mb-4">30-Day Performance</h3>
                     <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
                         {[
                             { label: 'Total Trades', value: perfSummary.total_trades ?? 0 },
@@ -354,8 +351,8 @@ export default function ZeroLossPage() {
                             { label: 'Net P&L', value: `₹${formatPrice(perfSummary.net_pnl ?? 0)}`, color: pnlColorClass(perfSummary.net_pnl ?? 0) },
                         ].map((item, i) => (
                             <div key={i} className="text-center p-3 rounded-lg bg-surface-800/40 border border-edge/5">
-                                <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">{item.label}</div>
-                                <div className={cn('text-base font-bold font-mono', item.color || 'text-heading')}>
+                                <div className="metric-label mb-1">{item.label}</div>
+                                <div className={cn('text-base font-semibold font-price tabular-nums', item.color || 'text-heading')}>
                                     {item.value}
                                 </div>
                             </div>
@@ -366,7 +363,7 @@ export default function ZeroLossPage() {
 
             {/* ── Signal History ───────────────────────────────────────── */}
             <div className="rounded-xl border border-edge/5 bg-surface-900/60 p-4">
-                <h3 className="text-sm font-semibold text-heading mb-4">Signal History</h3>
+<h3 className="section-title text-xs mb-4">Signal History</h3>
 
                 {signals.length === 0 ? (
                     <div className="text-center text-gray-600 py-8 text-sm">
@@ -376,21 +373,21 @@ export default function ZeroLossPage() {
                     <div className="overflow-x-auto">
                         <table className="w-full text-xs">
                             <thead>
-                                <tr className="border-b border-edge/5 text-gray-500 uppercase tracking-wider">
-                                    <th className="text-left py-2 px-3">Time</th>
-                                    <th className="text-left py-2 px-3">Symbol</th>
-                                    <th className="text-left py-2 px-3">Direction</th>
-                                    <th className="text-right py-2 px-3">Confidence</th>
-                                    <th className="text-right py-2 px-3">Entry</th>
-                                    <th className="text-right py-2 px-3">Stop Loss</th>
-                                    <th className="text-right py-2 px-3">Target</th>
-                                    <th className="text-center py-2 px-3">Status</th>
+                                <tr className="border-b border-edge/5">
+                                    <th className="text-left py-2 px-3 metric-label">Time</th>
+                                    <th className="text-left py-2 px-3 metric-label">Symbol</th>
+                                    <th className="text-left py-2 px-3 metric-label">Direction</th>
+                                    <th className="text-right py-2 px-3 metric-label">Confidence</th>
+                                    <th className="text-right py-2 px-3 metric-label">Entry</th>
+                                    <th className="text-right py-2 px-3 metric-label">Stop Loss</th>
+                                    <th className="text-right py-2 px-3 metric-label">Target</th>
+                                    <th className="text-center py-2 px-3 metric-label">Status</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {signals.map((sig, i) => (
                                     <tr key={i} className="border-b border-edge/[0.03] hover:bg-overlay/5 transition-colors">
-                                        <td className="py-2 px-3 text-gray-400 font-mono">
+                                        <td className="py-2 px-3 text-gray-400 font-price tabular-nums">
                                             {sig.timestamp ? new Date(sig.timestamp).toLocaleString('en-IN', { hour12: false, hour: '2-digit', minute: '2-digit', day: '2-digit', month: 'short' }) : '—'}
                                         </td>
                                         <td className="py-2 px-3 font-semibold text-heading">
@@ -399,16 +396,16 @@ export default function ZeroLossPage() {
                                         <td className="py-2 px-3">
                                             <DirectionBadge direction={sig.direction} />
                                         </td>
-                                        <td className="py-2 px-3 text-right font-mono text-heading">
+                                        <td className="py-2 px-3 text-right font-price tabular-nums text-heading">
                                             {sig.confidence_score?.toFixed(1) ?? '—'}
                                         </td>
-                                        <td className="py-2 px-3 text-right font-mono text-gray-300">
+                                        <td className="py-2 px-3 text-right font-price tabular-nums text-gray-300">
                                             {sig.entry_price ? formatPrice(sig.entry_price) : '—'}
                                         </td>
-                                        <td className="py-2 px-3 text-right font-mono text-amber-400">
+                                        <td className="py-2 px-3 text-right font-price tabular-nums text-amber-400">
                                             {sig.stop_loss ? formatPrice(sig.stop_loss) : '—'}
                                         </td>
-                                        <td className="py-2 px-3 text-right font-mono text-emerald-400">
+                                        <td className="py-2 px-3 text-right font-price tabular-nums text-emerald-400">
                                             {sig.target ? formatPrice(sig.target) : '—'}
                                         </td>
                                         <td className="py-2 px-3 text-center">
@@ -424,20 +421,21 @@ export default function ZeroLossPage() {
 
             {/* ── How It Works ─────────────────────────────────────────── */}
             <div className="rounded-xl border border-edge/5 bg-surface-900/60 p-4 text-xs text-gray-500 space-y-2">
-                <h3 className="text-sm font-semibold text-heading mb-2">How ZeroLoss Works</h3>
+                <h3 className="section-title text-xs mb-3">How ZeroLoss Works</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="space-y-1">
-                        <div className="text-primary-400 font-semibold">1. Confidence Gate</div>
-                        <p>Analyses EMA stack, RSI, MACD, volume, VIX, and S/R levels. Only enters when score ≥ 75/100.</p>
-                    </div>
-                    <div className="space-y-1">
-                        <div className="text-primary-400 font-semibold">2. Break-Even Stop</div>
-                        <p>Stop-loss placed at exact break-even (including 0.25% transaction costs). If hit → zero net loss.</p>
-                    </div>
-                    <div className="space-y-1">
-                        <div className="text-primary-400 font-semibold">3. Two Outcomes Only</div>
-                        <p>Every trade ends as PROFIT (target hit, 1:3 RR) or BREAKEVEN (stop hit, ₹0 loss). Never a net loss.</p>
-                    </div>
+                    {[
+                        { step: '01', title: 'Confidence Gate', desc: 'Analyses EMA stack, RSI, MACD, volume, VIX, and S/R levels. Only enters when score ≥ 75/100.', color: 'text-blue-400 border-blue-500/20 bg-blue-500/5' },
+                        { step: '02', title: 'Break-Even Stop', desc: 'Stop-loss placed at exact break-even (including 0.25% transaction costs). If hit → zero net loss.', color: 'text-amber-400 border-amber-500/20 bg-amber-500/5' },
+                        { step: '03', title: 'Two Outcomes Only', desc: 'Every trade ends as PROFIT (target hit, 1:3 RR) or BREAKEVEN (stop hit, ₹0 loss). Never a net loss.', color: 'text-emerald-400 border-emerald-500/20 bg-emerald-500/5' },
+                    ].map(s => (
+                        <div key={s.step} className={cn('rounded-lg border p-3 space-y-1', s.color)}>
+                            <div className="flex items-center gap-2">
+                                <span className="font-price text-lg font-semibold opacity-40">{s.step}</span>
+                                <span className="text-xs font-semibold">{s.title}</span>
+                            </div>
+                            <p className="text-gray-500 leading-relaxed">{s.desc}</p>
+                        </div>
+                    ))}
                 </div>
             </div>
         </div>

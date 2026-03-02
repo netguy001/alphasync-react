@@ -369,7 +369,7 @@ export default function SettingsPage() {
   return (
     <div className="p-4 lg:p-6 max-w-4xl animate-fade-in">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-heading">Settings</h1>
+        <h1 className="text-2xl font-display font-semibold text-heading">Settings</h1>
         <p className="text-gray-500 text-sm mt-0.5">
           Manage your account preferences
         </p>
@@ -385,8 +385,8 @@ export default function SettingsPage() {
               className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap
                                 ${
                                   activeTab === id
-                                    ? "bg-primary-600/15 text-primary-400 border-l-2 border-primary-500"
-                                    : "text-gray-400 hover:text-heading hover:bg-overlay/5 border-l-2 border-transparent"
+                                    ? "bg-primary-600/15 text-primary-400 border-l-[3px] border-primary-500"
+                                    : "text-gray-400 hover:text-heading hover:bg-overlay/5 border-l-[3px] border-transparent"
                                 }`}
             >
               <Icon className="w-4 h-4 flex-shrink-0" />
@@ -399,8 +399,8 @@ export default function SettingsPage() {
         <div className="flex-1 min-w-0">
           {/* ── Profile ── */}
           {activeTab === "profile" && (
-            <div className="glass-card p-6">
-              <h2 className="text-sm font-semibold text-heading mb-5">
+            <div className="rounded-xl border border-edge/5 bg-surface-900/60 p-6">
+              <h2 className="section-title text-xs mb-5">
                 Profile Information
               </h2>
               <AvatarUpload user={user} onUpdate={updateUser} />
@@ -461,8 +461,8 @@ export default function SettingsPage() {
 
           {/* ── Security ── */}
           {activeTab === "security" && (
-            <div className="glass-card p-6">
-              <h2 className="text-sm font-semibold text-heading mb-5">
+            <div className="rounded-xl border border-edge/5 bg-surface-900/60 p-6">
+              <h2 className="section-title text-xs mb-5">
                 Change Password
               </h2>
               <form onSubmit={changePassword} className="space-y-4">
@@ -518,8 +518,8 @@ export default function SettingsPage() {
 
           {/* ── Appearance ── */}
           {activeTab === "appearance" && (
-            <div className="glass-card p-6">
-              <h2 className="text-sm font-semibold text-heading mb-5">
+            <div className="rounded-xl border border-edge/5 bg-surface-900/60 p-6">
+              <h2 className="section-title text-xs mb-5">
                 Appearance
               </h2>
               <div className="flex items-center justify-between p-4 rounded-lg bg-surface-900/40 border border-edge/[0.03]">
@@ -552,8 +552,8 @@ export default function SettingsPage() {
 
           {/* ── 2FA ── */}
           {activeTab === "2fa" && (
-            <div className="glass-card p-6">
-              <h2 className="text-sm font-semibold text-heading mb-1">
+            <div className="rounded-xl border border-edge/5 bg-surface-900/60 p-6">
+              <h2 className="section-title text-xs mb-1">
                 Two-Factor Authentication
               </h2>
               <p className="text-xs text-gray-500 mb-5">
@@ -580,7 +580,7 @@ export default function SettingsPage() {
                     <p className="text-xs text-gray-500 mb-2">
                       Or enter this secret manually:
                     </p>
-                    <code className="text-sm text-primary-400 bg-primary-500/10 px-3 py-1.5 rounded-lg font-mono border border-primary-500/20">
+                    <code className="text-sm text-primary-400 bg-primary-500/10 px-3 py-1.5 rounded-lg font-price border border-primary-500/20">
                       {twoFA.setup.secret}
                     </code>
                   </div>
@@ -595,7 +595,7 @@ export default function SettingsPage() {
                         }
                         maxLength={6}
                         placeholder="000000"
-                        className="input-field w-40 text-center font-mono text-lg tracking-[0.5em]"
+                        className="input-field w-40 text-center font-price text-lg tracking-[0.5em]"
                       />
                       <button
                         onClick={verify2FA}

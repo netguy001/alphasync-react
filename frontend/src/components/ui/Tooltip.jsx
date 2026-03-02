@@ -1,15 +1,10 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { cn } from '../../utils/cn';
-
-const positions = {
-    top: '-translate-x-1/2 left-1/2 bottom-full mb-2',
-    bottom: '-translate-x-1/2 left-1/2 top-full mt-2',
-    left: '-translate-y-1/2 top-1/2 right-full mr-2',
-    right: '-translate-y-1/2 top-1/2 left-full ml-2',
-};
 
 /**
  * Lightweight tooltip wrapping any trigger element.
+ * Renders the popup via a portal so it is never clipped by parent overflow.
  *
  * @param {{
  *   content: string|ReactNode,
@@ -20,10 +15,43 @@ const positions = {
  */
 export default function Tooltip({ content, position = 'top', delay = 400, children, className }) {
     const [visible, setVisible] = useState(false);
+    const [coords, setCoords] = useState({ top: 0, left: 0 });
     const timerRef = useRef(null);
+    const triggerRef = useRef(null);
+
+    const calcPosition = useCallback(() => {
+        if (!triggerRef.current) return;
+        const rect = triggerRef.current.getBoundingClientRect();
+        const gap = 8;
+        let top, left;
+
+        switch (position) {
+            case 'right':
+                top = rect.top + rect.height / 2;
+                left = rect.right + gap;
+                break;
+            case 'left':
+                top = rect.top + rect.height / 2;
+                left = rect.left - gap;
+                break;
+            case 'bottom':
+                top = rect.bottom + gap;
+                left = rect.left + rect.width / 2;
+                break;
+            case 'top':
+            default:
+                top = rect.top - gap;
+                left = rect.left + rect.width / 2;
+                break;
+        }
+        setCoords({ top, left });
+    }, [position]);
 
     const show = () => {
-        timerRef.current = setTimeout(() => setVisible(true), delay);
+        timerRef.current = setTimeout(() => {
+            calcPosition();
+            setVisible(true);
+        }, delay);
     };
     const hide = () => {
         clearTimeout(timerRef.current);
@@ -32,21 +60,33 @@ export default function Tooltip({ content, position = 'top', delay = 400, childr
 
     useEffect(() => () => clearTimeout(timerRef.current), []);
 
+    const transformStyle = {
+        top: 'translateX(-50%) translateY(-100%)',
+        bottom: 'translateX(-50%)',
+        left: 'translateX(-100%) translateY(-50%)',
+        right: 'translateY(-50%)',
+    };
+
     return (
-        <div className="relative inline-flex" onMouseEnter={show} onMouseLeave={hide}>
+        <div className="relative inline-flex" ref={triggerRef} onMouseEnter={show} onMouseLeave={hide}>
             {children}
-            {visible && content && (
+            {visible && content && createPortal(
                 <div
                     className={cn(
-                        'absolute z-50 px-2.5 py-1.5 text-xs font-medium text-white',
+                        'fixed z-[9999] px-2.5 py-1.5 text-xs font-medium text-white',
                         'bg-surface-700 border border-edge/10 rounded-lg shadow-panel whitespace-nowrap',
                         'pointer-events-none animate-slide-in',
-                        positions[position],
                         className
                     )}
+                    style={{
+                        top: coords.top,
+                        left: coords.left,
+                        transform: transformStyle[position] || transformStyle.top,
+                    }}
                 >
                     {content}
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );

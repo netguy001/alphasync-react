@@ -44,21 +44,19 @@ export default function OrderPanel({ symbol, currentPrice = 0, isTerminalFocused
     };
 
     return (
-        <div className="flex flex-col h-full border-l border-edge/5 bg-surface-900/60">
+        <div className="flex flex-col h-full bg-[#111318] border-l border-[#1e2128]">
             {/* Header */}
             <div className="px-4 py-3 border-b border-edge/5">
-                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">
-                    Order Panel
-                </h3>
+                <h3 className="section-title text-xs mb-3">Order Panel</h3>
 
-                {/* Buy / Sell toggle */}
-                <div className="flex rounded-lg overflow-hidden border border-edge/10 bg-surface-800/60">
+                {/* Buy / Sell toggle — segmented pill */}
+                <div className="flex rounded-xl overflow-hidden border border-edge/10 bg-surface-800/60 p-0.5">
                     <button
                         onClick={() => setSide(ORDER_SIDE.BUY)}
                         className={cn(
-                            'flex-1 py-2 text-sm font-bold transition-all duration-200',
+                            'flex-1 py-2 text-sm font-bold rounded-lg transition-all duration-200',
                             isBuy
-                                ? 'bg-bull text-white shadow-bull'
+                                ? 'bg-bull text-white shadow-lg shadow-emerald-500/20'
                                 : 'text-gray-500 hover:text-gray-300'
                         )}
                     >
@@ -67,9 +65,9 @@ export default function OrderPanel({ symbol, currentPrice = 0, isTerminalFocused
                     <button
                         onClick={() => setSide(ORDER_SIDE.SELL)}
                         className={cn(
-                            'flex-1 py-2 text-sm font-bold transition-all duration-200',
+                            'flex-1 py-2 text-sm font-bold rounded-lg transition-all duration-200',
                             !isBuy
-                                ? 'bg-bear text-white shadow-bear'
+                                ? 'bg-bear text-white shadow-lg shadow-red-500/20'
                                 : 'text-gray-500 hover:text-gray-300'
                         )}
                     >
@@ -82,28 +80,28 @@ export default function OrderPanel({ symbol, currentPrice = 0, isTerminalFocused
             <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
                 {/* Symbol */}
                 <div>
-                    <label className="text-xs text-gray-500 uppercase tracking-wider block mb-1">Symbol</label>
-                    <div className="bg-surface-800/60 border border-edge/10 rounded-lg px-3 py-2 text-sm font-semibold text-heading">
-                        {symbol?.replace('.NS', '')}
-                        <span className="ml-2 text-xs text-gray-500 font-normal font-mono">
+                    <label className="metric-label block mb-1">Symbol</label>
+                    <div className="bg-surface-800/60 border border-edge/10 rounded-lg px-3 py-2 text-sm font-semibold text-heading flex items-center justify-between">
+                        <span>{symbol?.replace('.NS', '')}</span>
+                        <span className="text-xs text-gray-500 font-price tabular-nums">
                             {currentPrice > 0 ? `₹${formatPrice(currentPrice)}` : ''}
                         </span>
                     </div>
                 </div>
 
-                {/* Order type */}
+                {/* Order type — segmented pill */}
                 <div>
-                    <label className="text-xs text-gray-500 uppercase tracking-wider block mb-1">Order Type</label>
-                    <div className="grid grid-cols-4 gap-1">
+                    <label className="metric-label block mb-1">Order Type</label>
+                    <div className="flex rounded-lg overflow-hidden border border-edge/10 bg-surface-800/40 p-0.5 gap-0.5">
                         {ORDER_TYPES.map((t) => (
                             <button
                                 key={t}
                                 onClick={() => setForm((f) => ({ ...f, order_type: t }))}
                                 className={cn(
-                                    'py-1.5 text-xs font-medium rounded-lg border transition-all',
+                                    'flex-1 py-1.5 text-xs font-semibold rounded-md transition-all duration-150',
                                     form.order_type === t
-                                        ? 'bg-primary-600/20 text-primary-400 border-primary-500/30'
-                                        : 'border-edge/10 text-gray-500 hover:text-gray-300 hover:border-edge/20'
+                                        ? 'bg-primary-600/25 text-primary-400 shadow-sm'
+                                        : 'text-gray-500 hover:text-gray-300 hover:bg-surface-700/40'
                                 )}
                             >
                                 {t}
@@ -112,19 +110,19 @@ export default function OrderPanel({ symbol, currentPrice = 0, isTerminalFocused
                     </div>
                 </div>
 
-                {/* Product type */}
+                {/* Product type — segmented pill */}
                 <div>
-                    <label className="text-xs text-gray-500 uppercase tracking-wider block mb-1">Product</label>
-                    <div className="grid grid-cols-3 gap-1">
+                    <label className="metric-label block mb-1">Product</label>
+                    <div className="flex rounded-lg overflow-hidden border border-edge/10 bg-surface-800/40 p-0.5 gap-0.5">
                         {PRODUCT_TYPES.map((p) => (
                             <button
                                 key={p}
                                 onClick={() => setForm((f) => ({ ...f, product_type: p }))}
                                 className={cn(
-                                    'py-1.5 text-xs font-medium rounded-lg border transition-all',
+                                    'flex-1 py-1.5 text-xs font-semibold rounded-md transition-all duration-150',
                                     form.product_type === p
-                                        ? 'bg-primary-600/20 text-primary-400 border-primary-500/30'
-                                        : 'border-edge/10 text-gray-500 hover:text-gray-300 hover:border-edge/20'
+                                        ? 'bg-primary-600/25 text-primary-400 shadow-sm'
+                                        : 'text-gray-500 hover:text-gray-300 hover:bg-surface-700/40'
                                 )}
                             >
                                 {p}
@@ -135,7 +133,7 @@ export default function OrderPanel({ symbol, currentPrice = 0, isTerminalFocused
 
                 {/* Quantity with stepper */}
                 <div>
-                    <label className="text-xs text-gray-500 uppercase tracking-wider block mb-1">Quantity</label>
+                    <label className="metric-label block mb-1">Quantity</label>
                     <div className="flex items-center border border-edge/10 rounded-lg overflow-hidden bg-surface-800/60">
                         <button
                             onClick={() => setForm((f) => ({ ...f, quantity: Math.max(1, (parseInt(f.quantity) || 1) - 1) }))}
@@ -148,7 +146,7 @@ export default function OrderPanel({ symbol, currentPrice = 0, isTerminalFocused
                             min={1}
                             value={form.quantity}
                             onChange={(e) => setForm((f) => ({ ...f, quantity: e.target.value }))}
-                            className="flex-1 text-center bg-transparent text-heading text-sm font-mono py-2 focus:outline-none"
+                            className="flex-1 text-center bg-transparent text-heading text-sm font-price py-2 focus:outline-none tabular-nums"
                         />
                         <button
                             onClick={() => setForm((f) => ({ ...f, quantity: (parseInt(f.quantity) || 0) + 1 }))}
@@ -162,14 +160,14 @@ export default function OrderPanel({ symbol, currentPrice = 0, isTerminalFocused
                 {/* Price (for LIMIT orders) */}
                 {isLimit && (
                     <div>
-                        <label className="text-xs text-gray-500 uppercase tracking-wider block mb-1">Limit Price (₹)</label>
+                        <label className="metric-label block mb-1">Limit Price (₹)</label>
                         <input
                             type="number"
                             step="0.05"
                             value={form.price}
                             onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
                             placeholder={formatPrice(currentPrice)}
-                            className="w-full bg-surface-800/60 border border-edge/10 rounded-lg px-3 py-2 text-sm font-mono text-heading placeholder-gray-600 focus:outline-none focus:border-primary-500/30"
+                            className="w-full bg-surface-800/60 border border-edge/10 rounded-lg px-3 py-2 text-sm font-price text-heading placeholder-gray-600 focus:outline-none focus:border-primary-500/30 tabular-nums"
                         />
                     </div>
                 )}
@@ -177,14 +175,14 @@ export default function OrderPanel({ symbol, currentPrice = 0, isTerminalFocused
                 {/* Trigger price (for SL/SL-M) */}
                 {isSL && (
                     <div>
-                        <label className="text-xs text-gray-500 uppercase tracking-wider block mb-1">Trigger Price (₹)</label>
+                        <label className="metric-label block mb-1">Trigger Price (₹)</label>
                         <input
                             type="number"
                             step="0.05"
                             value={form.triggerPrice}
                             onChange={(e) => setForm((f) => ({ ...f, triggerPrice: e.target.value }))}
                             placeholder={formatPrice(currentPrice)}
-                            className="w-full bg-surface-800/60 border border-edge/10 rounded-lg px-3 py-2 text-sm font-mono text-heading placeholder-gray-600 focus:outline-none focus:border-primary-500/30"
+                            className="w-full bg-surface-800/60 border border-edge/10 rounded-lg px-3 py-2 text-sm font-price text-heading placeholder-gray-600 focus:outline-none focus:border-primary-500/30 tabular-nums"
                         />
                     </div>
                 )}
@@ -193,14 +191,23 @@ export default function OrderPanel({ symbol, currentPrice = 0, isTerminalFocused
                 <div className="rounded-xl bg-surface-800/40 border border-edge/5 p-3 space-y-2">
                     <div className="flex justify-between text-xs">
                         <span className="text-gray-500">Est. Value</span>
-                        <span className="font-mono text-heading font-medium">{formatCurrency(totalCost)}</span>
+                        <span className="font-price text-heading font-semibold tabular-nums">{formatCurrency(totalCost)}</span>
                     </div>
                     <div className="flex justify-between text-xs">
                         <span className="text-gray-500">Qty × Price</span>
-                        <span className="font-mono text-gray-400">
+                        <span className="font-price text-gray-400 tabular-nums">
                             {form.quantity || 0} × {isLimit && form.price ? `₹${form.price}` : `₹${formatPrice(currentPrice)}`}
                         </span>
                     </div>
+                    {/* Margin estimate */}
+                    {form.product_type === PRODUCT_TYPE.MIS && totalCost > 0 && (
+                        <div className="flex justify-between text-xs border-t border-edge/5 pt-2 mt-1">
+                            <span className="text-gray-500">Margin (5x)</span>
+                            <span className="font-price text-primary-400 font-medium tabular-nums">
+                                {formatCurrency(totalCost / 5)}
+                            </span>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -231,13 +238,13 @@ export default function OrderPanel({ symbol, currentPrice = 0, isTerminalFocused
                 <div className="px-6 py-4 space-y-4">
                     {/* Summary */}
                     <div className="rounded-xl border border-edge/10 bg-surface-900/50 divide-y divide-edge/5 text-sm">
-                        {[
+                        {[  
                             ['Side', <span className={cn('font-bold', isBuy ? 'text-bull' : 'text-bear')}>{form.side}</span>],
-                            ['Symbol', <span className="font-mono text-heading">{symbol?.replace('.NS', '')}</span>],
+                            ['Symbol', <span className="font-price text-heading">{symbol?.replace('.NS', '')}</span>],
                             ['Order Type', form.order_type],
                             ['Product', form.product_type],
-                            ['Quantity', <span className="font-mono">{form.quantity}</span>],
-                            ['Est. Value', <span className="font-mono font-semibold text-heading">{formatCurrency(totalCost)}</span>],
+                            ['Quantity', <span className="font-price tabular-nums">{form.quantity}</span>],
+                            ['Est. Value', <span className="font-price font-semibold text-heading tabular-nums">{formatCurrency(totalCost)}</span>],
                         ].map(([label, value]) => (
                             <div key={label} className="flex justify-between px-4 py-2.5">
                                 <span className="text-gray-500">{label}</span>

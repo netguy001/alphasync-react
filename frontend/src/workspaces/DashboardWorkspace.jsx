@@ -74,7 +74,7 @@ export default function DashboardWorkspace() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold text-heading">
+                    <h1 className="text-2xl font-semibold text-heading">
                         Welcome, {user?.full_name?.split(' ')[0] || user?.username || 'Trader'}
                     </h1>
                     <p className="text-gray-500 text-sm mt-0.5">Here&apos;s your portfolio overview</p>
@@ -92,7 +92,7 @@ export default function DashboardWorkspace() {
                             <span className="text-xs text-gray-500 uppercase tracking-wider font-medium">{label}</span>
                             <Icon className="w-4 h-4 text-gray-600" />
                         </div>
-                        <span className={cn('text-xl font-bold font-mono', pnl !== undefined ? pnlColorClass(pnl) : 'text-heading')}>
+                        <span className={cn('text-xl font-semibold font-mono', pnl !== undefined ? pnlColorClass(pnl) : 'text-heading')}>
                             {value}
                         </span>
                     </div>
@@ -120,7 +120,7 @@ export default function DashboardWorkspace() {
                         </div>
                         <div className="flex items-center gap-2">
                             <span className={cn(
-                                'px-2 py-0.5 rounded text-[10px] font-bold uppercase',
+                                'px-2 py-0.5 rounded text-[10px] font-semibold uppercase',
                                 zl.enabled ? 'text-emerald-400 bg-emerald-500/10' : 'text-gray-500 bg-gray-500/10'
                             )}>
                                 {zl.enabled ? 'ACTIVE' : 'STOPPED'}
@@ -142,7 +142,7 @@ export default function DashboardWorkspace() {
                         ].map((item, i) => (
                             <div key={i} className="text-center p-2 rounded-lg bg-surface-800/40 border border-edge/[0.03]">
                                 <div className="text-[10px] text-gray-600 uppercase tracking-wider">{item.label}</div>
-                                <div className={cn('text-sm font-bold font-mono mt-0.5', item.color || 'text-heading')}>
+                                <div className={cn('text-sm font-semibold font-mono mt-0.5', item.color || 'text-heading')}>
                                     {item.value}
                                 </div>
                             </div>
@@ -164,7 +164,7 @@ export default function DashboardWorkspace() {
                                             <div className={cn('h-full rounded-full transition-all duration-700', barColor)} style={{ width: `${score}%` }} />
                                         </div>
                                         <span className="font-mono text-gray-400">{Math.round(score)}</span>
-                                        <span className={cn('text-[10px] font-bold', dirColor)}>
+                                        <span className={cn('text-[10px] font-semibold', dirColor)}>
                                             {dir === 'BULLISH' ? '▲' : dir === 'BEARISH' ? '▼' : '—'}
                                         </span>
                                     </div>
@@ -184,7 +184,7 @@ export default function DashboardWorkspace() {
                             <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-surface-900/40 border border-edge/[0.03]">
                                 <div>
                                     <div className="text-xs font-medium text-gray-500">{idx.name}</div>
-                                    <div className="text-lg font-mono font-bold text-heading">
+                                    <div className="text-lg font-mono font-semibold text-heading">
                                         {Number(idx.price).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                                     </div>
                                 </div>
@@ -274,7 +274,7 @@ export default function DashboardWorkspace() {
                             {recentOrders.map((o, i) => (
                                 <div key={i} className="flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-overlay/[0.03] transition-colors">
                                     <div className="flex items-center gap-3">
-                                        <span className={cn('text-[11px] font-bold px-2 py-0.5 rounded', o.side === 'BUY' ? 'bg-bull/10 text-bull' : 'bg-bear/10 text-bear')}>
+                                        <span className={cn('text-[11px] font-semibold px-2 py-0.5 rounded', o.side === 'BUY' ? 'bg-bull/10 text-bull' : 'bg-bear/10 text-bear')}>
                                             {o.side}
                                         </span>
                                         <div>

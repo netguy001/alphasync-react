@@ -403,7 +403,7 @@ export default function Watchlist({
                                                     <span className="text-xs font-semibold text-heading">{s.symbol.replace('.NS', '')}</span>
                                                     {/* FIX: NSE/BSE badge with explicit colors — visible in dark AND light mode */}
                                                     <span className={cn(
-                                                        'inline-flex items-center px-1 py-0 rounded text-[9px] font-bold leading-4 tracking-wide',
+                                                        'inline-flex items-center px-1 py-0 rounded text-[9px] font-medium leading-4 tracking-wide',
                                                         'bg-gray-200 text-gray-600',
                                                         'dark:bg-surface-700 dark:text-gray-400',
                                                     )}>

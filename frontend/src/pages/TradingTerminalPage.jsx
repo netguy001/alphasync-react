@@ -1,7 +1,7 @@
 // ─── TradingTerminalPage — watchlist wired to store ───────────────────────────
 // Watchlist state (items, prices, id) is now owned by useWatchlistStore.
 // TradingTerminalPage no longer manages watchlist local state at all.
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useMarketStore } from '../store/useMarketStore';
 import { usePortfolioStore } from '../store/usePortfolioStore';
@@ -17,6 +17,58 @@ import ErrorBoundary from '../components/ErrorBoundary';
 import { cn } from '../utils/cn';
 import { formatPrice, formatPercent, pnlColorClass } from '../utils/formatters';
 import { CHART_PERIODS, DEFAULT_CHART_PERIOD, ORDER_STATUS_CLASS } from '../utils/constants';
+
+// ── Compact period dropdown for symbol header bar ─────────────────────────────
+function PeriodDropdown({ period, onPeriodChange }) {
+    const [open, setOpen] = useState(false);
+    const ref = useRef(null);
+
+    useEffect(() => {
+        if (!open) return;
+        const h = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+        document.addEventListener('mousedown', h);
+        return () => document.removeEventListener('mousedown', h);
+    }, [open]);
+
+    const current = CHART_PERIODS[period] || CHART_PERIODS[DEFAULT_CHART_PERIOD];
+
+    return (
+        <div className="relative" ref={ref}>
+            <button
+                onClick={() => setOpen((v) => !v)}
+                className={cn(
+                    'flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-xs font-semibold transition-all duration-200',
+                    open
+                        ? 'bg-primary-600/20 border-primary-500/40 text-primary-400'
+                        : 'bg-surface-800/80 border-edge/20 text-gray-400 hover:text-gray-200 hover:border-edge/40'
+                )}
+            >
+                {current.label}
+                <svg className={cn('w-3 h-3 transition-transform', open && 'rotate-180')} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+            </button>
+            {open && (
+                <div className="absolute top-full right-0 mt-1 w-28 bg-surface-800 border border-edge/10 rounded-xl shadow-panel z-50 animate-slide-in overflow-hidden py-1">
+                    {Object.entries(CHART_PERIODS).map(([key, cfg]) => (
+                        <button
+                            key={key}
+                            onClick={() => { onPeriodChange(key); setOpen(false); }}
+                            className={cn(
+                                'w-full text-left px-3 py-1.5 text-xs font-semibold transition-colors',
+                                period === key
+                                    ? 'bg-primary-500/15 text-primary-400'
+                                    : 'text-gray-400 hover:text-gray-200 hover:bg-white/[0.04]'
+                            )}
+                        >
+                            {cfg.label}
+                        </button>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
 
 // ── Bottom tabs: positions + order history ────────────────────────────────────
 function BottomTabs({ holdings, orders }) {
@@ -45,21 +97,21 @@ function BottomTabs({ holdings, orders }) {
                         <table className="w-full text-xs min-w-[500px]">
                             <thead>
                                 <tr className="text-gray-500 uppercase">
-                                    <th className="text-left pb-2 font-medium">Symbol</th>
-                                    <th className="text-right pb-2 font-medium">Qty</th>
-                                    <th className="text-right pb-2 font-medium">Avg</th>
-                                    <th className="text-right pb-2 font-medium">LTP</th>
-                                    <th className="text-right pb-2 font-medium">P&L</th>
+                                    <th className="text-left pb-2 font-medium metric-label">Symbol</th>
+                                    <th className="text-right pb-2 font-medium metric-label">Qty</th>
+                                    <th className="text-right pb-2 font-medium metric-label">Avg</th>
+                                    <th className="text-right pb-2 font-medium metric-label">LTP</th>
+                                    <th className="text-right pb-2 font-medium metric-label">P&L</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {holdings.map((h, i) => (
-                                    <tr key={h.symbol || i} className="border-t border-edge/[0.02]">
-                                        <td className="py-1.5 font-semibold text-heading">{h.symbol?.replace('.NS', '')}</td>
-                                        <td className="py-1.5 text-right font-mono text-gray-300">{h.quantity}</td>
-                                        <td className="py-1.5 text-right font-mono text-gray-300">{formatPrice(h.avg_price)}</td>
-                                        <td className="py-1.5 text-right font-mono text-heading">{formatPrice(h.current_price)}</td>
-                                        <td className={cn('py-1.5 text-right font-mono font-semibold', pnlColorClass(h.pnl ?? 0))}>
+                                    <tr key={h.symbol || i} className="border-t border-edge/[0.03] hover:bg-white/[0.02] transition-colors">
+                                        <td className="py-1.5 font-medium text-heading">{h.symbol?.replace('.NS', '')}</td>
+                                        <td className="py-1.5 text-right font-price text-gray-300 tabular-nums">{h.quantity}</td>
+                                        <td className="py-1.5 text-right font-price text-gray-300 tabular-nums">{formatPrice(h.avg_price)}</td>
+                                        <td className="py-1.5 text-right font-price text-heading tabular-nums">{formatPrice(h.current_price)}</td>
+                                        <td className={cn('py-1.5 text-right font-price font-medium tabular-nums', pnlColorClass(h.pnl ?? 0))}>
                                             {(h.pnl ?? 0) >= 0 ? '+' : ''}₹{formatPrice(h.pnl ?? 0)}{' '}
                                             ({formatPercent(h.pnl_percent ?? 0)})
                                         </td>
@@ -75,26 +127,26 @@ function BottomTabs({ holdings, orders }) {
                         <table className="w-full text-xs min-w-[600px]">
                             <thead>
                                 <tr className="text-gray-500 uppercase">
-                                    <th className="text-left pb-2 font-medium">Symbol</th>
-                                    <th className="text-left pb-2 font-medium">Side</th>
-                                    <th className="text-left pb-2 font-medium">Type</th>
-                                    <th className="text-right pb-2 font-medium">Qty</th>
-                                    <th className="text-right pb-2 font-medium">Price</th>
-                                    <th className="text-right pb-2 font-medium">Status</th>
+                                    <th className="text-left pb-2 font-medium metric-label">Symbol</th>
+                                    <th className="text-left pb-2 font-medium metric-label">Side</th>
+                                    <th className="text-left pb-2 font-medium metric-label">Type</th>
+                                    <th className="text-right pb-2 font-medium metric-label">Qty</th>
+                                    <th className="text-right pb-2 font-medium metric-label">Price</th>
+                                    <th className="text-right pb-2 font-medium metric-label">Status</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {orders.map((o, i) => (
-                                    <tr key={o.id || i} className="border-t border-edge/[0.02]">
-                                        <td className="py-1.5 font-semibold text-heading">{o.symbol?.replace('.NS', '')}</td>
-                                        <td className={cn('py-1.5 font-semibold', o.side === 'BUY' ? 'text-bull' : 'text-bear')}>{o.side}</td>
+                                    <tr key={o.id || i} className="border-t border-edge/[0.03] hover:bg-white/[0.02] transition-colors">
+                                        <td className="py-1.5 font-medium text-heading">{o.symbol?.replace('.NS', '')}</td>
+                                        <td className={cn('py-1.5 font-medium', o.side === 'BUY' ? 'text-bull' : 'text-bear')}>{o.side}</td>
                                         <td className="py-1.5 text-gray-400">{o.order_type}</td>
-                                        <td className="py-1.5 text-right font-mono text-gray-300">{o.quantity}</td>
-                                        <td className="py-1.5 text-right font-mono text-heading">
+                                        <td className="py-1.5 text-right font-price text-gray-300 tabular-nums">{o.quantity}</td>
+                                        <td className="py-1.5 text-right font-price text-heading tabular-nums">
                                             {formatPrice(o.filled_price ?? o.price ?? null)}
                                         </td>
                                         <td className="py-1.5 text-right">
-                                            <span className={cn('text-[11px] px-1.5 py-0.5 rounded font-medium', ORDER_STATUS_CLASS[o.status] || ORDER_STATUS_CLASS.PENDING)}>
+                                            <span className={cn('text-[11px] px-2 py-0.5 rounded-full font-medium', ORDER_STATUS_CLASS[o.status] || ORDER_STATUS_CLASS.PENDING)}>
                                                 {o.status}
                                             </span>
                                         </td>
@@ -221,7 +273,7 @@ export default function TradingTerminalPage() {
                     <svg className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M9 18l6-6-6-6" />
                     </svg>
-                    <span className="text-[10px] font-bold uppercase tracking-widest [writing-mode:vertical-lr] rotate-180 mt-1 text-gray-400 group-hover:text-primary-400 transition-colors">Watchlist</span>
+                    <span className="text-[10px] font-semibold uppercase tracking-widest [writing-mode:vertical-lr] rotate-180 mt-1 text-gray-400 group-hover:text-primary-400 transition-colors">Watchlist</span>
                 </button>
             )}
 
@@ -230,19 +282,20 @@ export default function TradingTerminalPage() {
                 {/* Symbol header bar */}
                 <div className="flex items-center gap-4 px-4 py-2.5 border-b border-edge/5 bg-surface-900/30 flex-shrink-0">
                     <div>
-                        <h2 className="text-lg font-bold text-heading leading-none">
+                        <h2 className="text-lg font-display font-semibold text-heading leading-none">
                             {selectedSymbol.replace('.NS', '')}
                         </h2>
-                        <span className="text-xs text-gray-500">{quote?.name || selectedSymbol} • NSE</span>
+                        <span className="text-[11px] text-gray-500">{quote?.name || selectedSymbol} • NSE</span>
                     </div>
 
                     {quote?.price != null && (
                         <div className="flex items-baseline gap-3">
-                            <span className="text-2xl font-bold font-mono text-heading tabular-nums">
+                            <span className="text-2xl font-semibold font-price text-heading tabular-nums">
                                 {formatPrice(quote.price)}
                             </span>
                             {quote.change != null && (
-                                <span className={cn('text-sm font-mono font-semibold', pnlColorClass(quote.change))}>
+                                <span className={cn('text-sm font-price font-semibold tabular-nums', pnlColorClass(quote.change))}>
+                                    {quote.change >= 0 ? '▲' : '▼'}{' '}
                                     {quote.change >= 0 ? '+' : ''}{formatPrice(quote.change)}{' '}
                                     ({formatPercent(quote.change_percent)})
                                 </span>
@@ -250,18 +303,42 @@ export default function TradingTerminalPage() {
                         </div>
                     )}
 
-                    <div className="hidden xl:flex items-center gap-4 ml-auto text-xs text-gray-500">
-                        {[
-                            ['Open', quote?.open],
-                            ['High', quote?.high],
-                            ['Low', quote?.low],
-                            ['Prev', quote?.prev_close],
-                        ].map(([label, val]) => val != null && (
-                            <div key={label}>
-                                <span className="text-gray-600">{label}: </span>
-                                <span className="font-mono text-gray-400">{formatPrice(val)}</span>
-                            </div>
-                        ))}
+                    {/* Spacer + right-aligned controls */}
+                    <div className="flex items-center gap-2 ml-auto">
+                        {/* OHLC — xl only */}
+                        <div className="hidden xl:flex items-center gap-4 text-xs text-gray-500 mr-2">
+                            {[
+                                ['Open', quote?.open],
+                                ['High', quote?.high],
+                                ['Low', quote?.low],
+                                ['Prev', quote?.prev_close],
+                            ].map(([label, val]) => val != null && (
+                                <div key={label} className="flex items-center gap-1">
+                                    <span className="metric-label text-[10px]">{label}</span>
+                                    <span className="font-price text-gray-400 tabular-nums">{formatPrice(val)}</span>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Period dropdown */}
+                        <PeriodDropdown period={chartPeriod} onPeriodChange={setChartPeriod} />
+
+                        {/* Strategy toggle */}
+                        <button
+                            onClick={() => setStrategyDockOpen((v) => !v)}
+                            className={cn(
+                                'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-semibold transition-all duration-200',
+                                strategyDockOpen
+                                    ? 'bg-primary-600/20 border-primary-500/40 text-primary-400'
+                                    : 'bg-surface-800/80 border-edge/20 text-gray-400 hover:text-gray-200 hover:border-edge/40'
+                            )}
+                            title="Toggle Strategy Dock"
+                        >
+                            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M12 20V10M18 20V4M6 20v-4" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                            Strategies
+                        </button>
                     </div>
                 </div>
 
@@ -271,30 +348,12 @@ export default function TradingTerminalPage() {
                         <TradingChart
                             candles={candles}
                             period={chartPeriod}
-                            onPeriodChange={setChartPeriod}
                             isLoading={chartLoading}
                             symbol={selectedSymbol}
                             trendData={trendData}
                             zeroLossTrend={zlConfidence}
                         />
                     </ErrorBoundary>
-
-                    {/* Strategy Dock toggle button */}
-                    <button
-                        onClick={() => setStrategyDockOpen((v) => !v)}
-                        className={cn(
-                            'absolute top-3 left-3 z-20 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border backdrop-blur-md text-xs font-semibold transition-all duration-200 shadow-lg',
-                            strategyDockOpen
-                                ? 'bg-primary-600/20 border-primary-500/40 text-primary-400 shadow-primary-500/10'
-                                : 'bg-surface-800/80 border-edge/20 text-gray-400 hover:text-gray-200 hover:border-edge/40'
-                        )}
-                        title="Toggle Strategy Dock"
-                    >
-                        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M12 20V10M18 20V4M6 20v-4" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                        Strategies
-                    </button>
                 </div>
 
                 {/* Bottom tabs (collapsible) */}
@@ -311,7 +370,7 @@ export default function TradingTerminalPage() {
             </div>
 
             {/* ── RIGHT: Order panel (full height) ──────────────────────── */}
-            <div className="w-[300px] flex-shrink-0 hidden lg:flex flex-col">
+            <div className="w-[300px] min-w-[300px] flex-shrink-0 hidden lg:flex flex-col overflow-hidden border-l border-[#1e2128]">
                 <OrderPanel
                     symbol={selectedSymbol}
                     currentPrice={quote?.price ?? 0}

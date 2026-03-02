@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../stores/useAuthStore";
+import Tooltip from "../ui/Tooltip";
 import { cn } from "../../utils/cn";
 import { SIDEBAR_EXPANDED_W, SIDEBAR_COLLAPSED_W } from "../../utils/constants";
 import {
@@ -12,6 +13,7 @@ import {
   LuLogOut,
   LuPanelLeftClose,
   LuPanelLeftOpen,
+  LuFlaskConical,
 } from "react-icons/lu";
 
 /* ─── Avatar helpers ─────────────────────────────────────── */
@@ -65,7 +67,7 @@ function UserAvatar({ user, size = 8 }) {
 
   return (
     <div
-      className={`${dim} rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold text-xs select-none ring-1 ring-white/10`}
+      className={`${dim} rounded-full flex items-center justify-center flex-shrink-0 text-white font-semibold text-xs select-none ring-1 ring-white/10`}
       style={{ background: `linear-gradient(135deg, ${bg}cc, ${bg})` }}
     >
       {initials}
@@ -98,44 +100,44 @@ const NAV_SECTIONS = [
 
 /* ─── Reusable nav item ──────────────────────────────────── */
 function SidebarItem({ to, icon: Icon, label, collapsed }) {
-  return (
+  const link = (
     <NavLink
       to={to}
-      title={collapsed ? label : undefined}
+      aria-label={label}
       className={({ isActive }) =>
         cn(
-          "relative flex items-center h-10 rounded-md transition-all duration-200 ease-out",
-          "text-[13px] font-medium",
-          collapsed ? "justify-center mx-auto w-full" : "gap-3 px-3",
+          "relative flex items-center h-10 rounded-lg transition-all duration-200 ease-out",
+          "text-[13px]",
+          collapsed
+            ? "justify-center w-10 mx-auto"
+            : "gap-3 px-3",
           isActive
-            ? "bg-primary-600/10 text-primary-400"
-            : "text-gray-400 hover:text-gray-200 hover:bg-white/[0.04]",
+            ? collapsed
+              ? "bg-primary-600/15 text-primary-400 ring-1 ring-primary-500/25"
+              : "bg-primary-600/10 text-primary-400 border-l-[3px] border-primary-500 font-medium"
+            : collapsed
+              ? "text-gray-400 hover:text-gray-200 hover:bg-white/[0.06]"
+              : "text-gray-400 hover:text-gray-200 hover:bg-white/[0.04] border-l-[3px] border-transparent font-normal",
         )
       }
     >
-      {({ isActive }) => (
-        <>
-          {isActive && (
-            <span
-              className="absolute top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-primary-500"
-              style={{ left: -10 }}
-            />
-          )}
-          <Icon className="w-[18px] h-[18px] flex-shrink-0" />
-          <span
-            className={cn(
-              "whitespace-nowrap transition-all duration-200",
-              collapsed
-                ? "w-0 opacity-0 overflow-hidden"
-                : "w-auto opacity-100",
-            )}
-          >
-            {label}
-          </span>
-        </>
+      <Icon className="w-5 h-5 flex-shrink-0" />
+      {!collapsed && (
+        <span className="whitespace-nowrap">
+          {label}
+        </span>
       )}
     </NavLink>
   );
+
+  if (collapsed) {
+    return (
+      <Tooltip content={label} position="right" delay={200}>
+        {link}
+      </Tooltip>
+    );
+  }
+  return link;
 }
 
 /* ─── Section label ──────────────────────────────────────── */
@@ -185,7 +187,7 @@ export default function Sidebar({ collapsed, onToggle }) {
           className={cn(
             "flex-shrink-0 transition-all duration-300",
             collapsed
-              ? "flex flex-col items-center gap-1.5 py-3 px-2"
+              ? "flex flex-col items-center gap-1 py-2.5 px-2"
               : "flex items-center justify-between h-16 px-3",
           )}
         >
@@ -194,16 +196,19 @@ export default function Sidebar({ collapsed, onToggle }) {
             alt="AlphaSync"
             className={cn(
               "dark:brightness-100 brightness-0 object-contain flex-shrink-0 transition-all duration-300",
-              collapsed ? "h-8 w-8" : "h-14",
+              collapsed ? "h-7 w-7" : "h-14",
             )}
           />
           <button
             onClick={onToggle}
-            className="rounded-md text-gray-500 hover:text-gray-300 hover:bg-white/[0.06] transition-all duration-200 p-1.5 flex-shrink-0"
+            className={cn(
+              "rounded-md text-gray-500 hover:text-gray-300 hover:bg-white/[0.06] transition-all duration-200 flex-shrink-0",
+              collapsed ? "p-1 mt-0.5" : "p-1.5",
+            )}
             title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
             {collapsed ? (
-              <LuPanelLeftOpen className="w-4 h-4" />
+              <LuPanelLeftOpen className="w-3.5 h-3.5" />
             ) : (
               <LuPanelLeftClose className="w-4 h-4" />
             )}
@@ -231,40 +236,52 @@ export default function Sidebar({ collapsed, onToggle }) {
         <div className="mx-3 h-px bg-edge/8" />
 
         {/* ── Account module ── */}
-        <div className="flex-shrink-0 p-2.5">
-          {user && (
-            <div
-              className={cn(
-                "flex items-center rounded-md mb-1 transition-all duration-200",
-                collapsed
-                  ? "justify-center py-2"
-                  : "gap-2.5 px-3 py-2.5 hover:bg-white/[0.03]",
-              )}
-              title={
-                collapsed
-                  ? `${user.full_name || user.username}\n${user.email}`
-                  : undefined
-              }
-            >
-              {/* ── Avatar: shows photo or initials ── */}
-              <UserAvatar user={user} size={8} />
+        <div className="flex-shrink-0 p-2.5 space-y-1">
+          {/* Simulation mode toggle */}
+          <div
+            className={cn(
+              "flex items-center rounded-lg mb-2 transition-all duration-200",
+              collapsed
+                ? "justify-center py-1.5 mx-auto w-10 bg-amber-500/[0.06] border border-amber-500/10"
+                : "gap-2.5 px-3 py-2 bg-amber-500/[0.06] border border-amber-500/10",
+            )}
+            title="Simulation Mode — Trading with virtual money"
+          >
+            <LuFlaskConical className="w-[18px] h-[18px] flex-shrink-0 text-amber-400" />
+            {!collapsed && (
+              <div className="min-w-0 flex items-center justify-between flex-1">
+                <div>
+                  <p className="text-[11px] font-semibold text-amber-400 leading-tight">Simulation</p>
+                  <p className="text-[10px] text-amber-400/60 leading-tight">Virtual Money</p>
+                </div>
+                <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+              </div>
+            )}
+          </div>
 
+          {user && (
+            <Tooltip content={`${user.full_name || user.username}`} position="right" delay={200}>
               <div
                 className={cn(
-                  "min-w-0 transition-all duration-200",
+                  "flex items-center rounded-lg mb-1 transition-all duration-200",
                   collapsed
-                    ? "w-0 opacity-0 overflow-hidden"
-                    : "w-auto opacity-100",
+                    ? "justify-center py-1.5 mx-auto w-10"
+                    : "gap-2.5 px-3 py-2.5 hover:bg-white/[0.03]",
                 )}
               >
-                <p className="text-[13px] font-medium text-heading truncate leading-tight">
-                  {user.full_name || user.username}
-                </p>
-                <p className="text-[11px] text-gray-500 truncate leading-tight mt-0.5">
-                  {user.email}
-                </p>
+                <UserAvatar user={user} size={8} />
+                {!collapsed && (
+                  <div className="min-w-0">
+                    <p className="text-[13px] font-medium text-heading truncate leading-tight">
+                      {user.full_name || user.username}
+                    </p>
+                    <p className="text-[11px] text-gray-500 truncate leading-tight mt-0.5">
+                      {user.email}
+                    </p>
+                  </div>
+                )}
               </div>
-            </div>
+            </Tooltip>
           )}
 
           {/* Logout */}
@@ -272,22 +289,17 @@ export default function Sidebar({ collapsed, onToggle }) {
             onClick={handleLogout}
             title={collapsed ? "Log Out" : undefined}
             className={cn(
-              "flex items-center h-10 rounded-md w-full transition-all duration-200",
+              "flex items-center h-10 rounded-md transition-all duration-200",
               "text-gray-500 hover:text-red-400 hover:bg-red-500/[0.06]",
-              collapsed ? "justify-center" : "gap-3 px-3",
+              collapsed ? "justify-center w-10 mx-auto" : "gap-3 px-3 w-full",
             )}
           >
             <LuLogOut className="w-[18px] h-[18px] flex-shrink-0" />
-            <span
-              className={cn(
-                "text-[13px] font-medium whitespace-nowrap transition-all duration-200",
-                collapsed
-                  ? "w-0 opacity-0 overflow-hidden"
-                  : "w-auto opacity-100",
-              )}
-            >
-              Log Out
-            </span>
+            {!collapsed && (
+              <span className="text-[13px] font-medium whitespace-nowrap">
+                Log Out
+              </span>
+            )}
           </button>
         </div>
       </aside>

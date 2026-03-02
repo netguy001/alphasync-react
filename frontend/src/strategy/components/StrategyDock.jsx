@@ -84,7 +84,7 @@ const savePos = (p) => { try { localStorage.setItem(LS_POS_KEY, JSON.stringify(p
 function SignalBadge({ signal }) {
     const s = SIG[signal] || SIG.Neutral;
     return (
-        <span className={cn('inline-flex items-center gap-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full tracking-wide', s.pill)}>
+        <span className={cn('inline-flex items-center gap-1.5 text-[10px] font-semibold px-2 py-0.5 rounded-full tracking-wide', s.pill)}>
             <span className={cn('w-1.5 h-1.5 rounded-full flex-shrink-0', s.dot)} />
             {signal}
         </span>
@@ -155,7 +155,7 @@ function StrategyRow({ meta, result, enabled, onToggle }) {
                                 style={{ width: `${Math.max(conf, 4)}%` }}
                             />
                         </div>
-                        <span className={cn('text-[10px] font-mono font-bold tabular-nums flex-shrink-0', s.dot.replace('bg-', 'text-').replace('-400', '-400'))}>
+                        <span className={cn('text-[10px] font-mono font-semibold tabular-nums flex-shrink-0', s.dot.replace('bg-', 'text-').replace('-400', '-400'))}>
                             {conf}%
                         </span>
                     </div>
@@ -321,13 +321,13 @@ export default function StrategyDock({ candles = [], isOpen = false, onClose }) 
                         </svg>
                     </div>
                     <div>
-                        <span className="text-[12px] font-bold text-gray-200 tracking-wide">Strategy Engine</span>
+                        <span className="text-[12px] font-semibold text-gray-200 tracking-wide">Strategy Engine</span>
                     </div>
                 </div>
 
                 <div className="flex items-center gap-2">
                     {/* Active count badge */}
-                    <span className="text-[10px] font-bold text-gray-500 bg-white/[0.04] px-2 py-0.5 rounded-full font-mono">
+                    <span className="text-[10px] font-semibold text-gray-500 bg-white/[0.04] px-2 py-0.5 rounded-full font-mono">
                         {enabledIds.length}/{allStrategies.length} active
                     </span>
                     {/* Drag hint */}
@@ -357,19 +357,19 @@ export default function StrategyDock({ candles = [], isOpen = false, onClose }) 
                     {/* Top row: bias label + ring */}
                     <div className="flex items-center justify-between mb-4">
                         <div className="space-y-1.5">
-                            <p className="text-[9px] text-gray-600 uppercase tracking-[0.12em] font-bold">Market Bias</p>
+                            <p className="text-[9px] text-gray-600 uppercase tracking-[0.12em] font-semibold">Market Bias</p>
                             <div className="flex items-center gap-2">
                                 <span className={cn('flex items-center justify-center w-6 h-6 rounded-lg', b.bg, b.border)}>
                                     <span className={b.text}>{b.icon}</span>
                                 </span>
-                                <span className={cn('text-xl font-black tracking-tight', b.text)}>
+                                <span className={cn('text-xl font-semibold tracking-tight', b.text)}>
                                     {b.label}
                                 </span>
                             </div>
                             {/* Score */}
                             <div className="flex items-center gap-1.5 mt-1">
                                 <span className="text-[10px] text-gray-600">Score</span>
-                                <span className={cn('text-[11px] font-bold font-mono tabular-nums', b.text)}>
+                                <span className={cn('text-[11px] font-semibold font-mono tabular-nums', b.text)}>
                                     {scoreDisplay}
                                 </span>
                             </div>
@@ -432,14 +432,14 @@ export default function StrategyDock({ candles = [], isOpen = false, onClose }) 
                             </div>
                             <div className="flex items-center gap-2">
                                 <span className={cn(
-                                    'text-[10px] font-bold px-2 py-0.5 rounded-full',
+                                    'text-[10px] font-semibold px-2 py-0.5 rounded-full',
                                     zeroLossForSymbol.direction === 'BULLISH'
                                         ? 'bg-emerald-500/15 text-emerald-400'
                                         : 'bg-red-500/15 text-red-400'
                                 )}>
                                     {zeroLossForSymbol.direction}
                                 </span>
-                                <span className="text-[11px] font-bold font-mono text-gray-300">
+                                <span className="text-[11px] font-semibold font-mono text-gray-300">
                                     {Math.round(zeroLossForSymbol.score)}%
                                 </span>
                             </div>
@@ -450,7 +450,7 @@ export default function StrategyDock({ candles = [], isOpen = false, onClose }) 
 
             {/* ── SECTION LABEL ───────────────────────────────────────────── */}
             <div className="px-4 pb-2 flex items-center gap-2 flex-shrink-0">
-                <span className="text-[9px] font-bold text-gray-700 uppercase tracking-[0.15em]">Strategies</span>
+                <span className="text-[9px] font-semibold text-gray-700 uppercase tracking-[0.15em]">Strategies</span>
                 <div className="flex-1 h-px bg-white/[0.04]" />
             </div>
 

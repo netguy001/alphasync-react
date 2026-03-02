@@ -3,12 +3,6 @@ import { cn } from '../../utils/cn';
 import { CHART_PERIODS } from '../../utils/constants';
 import { formatPrice, formatPercent, pnlColorClass } from '../../utils/formatters';
 
-const TREND_CFG = {
-    BULLISH: { text: 'text-emerald-400', icon: '▲' },
-    BEARISH: { text: 'text-red-400', icon: '▼' },
-    NEUTRAL: { text: 'text-gray-400', icon: '—' },
-};
-
 const ALL_PERIODS = Object.entries(CHART_PERIODS);
 const INTRADAY = ALL_PERIODS.filter(([, v]) => v.group === 'intraday');
 const DAILY = ALL_PERIODS.filter(([, v]) => v.group === 'daily');
@@ -38,16 +32,15 @@ function ChartHeader({
 
     if (!symbol) return null;
 
-    const trend = trendData ? (TREND_CFG[trendData.overall] || TREND_CFG.NEUTRAL) : TREND_CFG.NEUTRAL;
     const currentLabel = CHART_PERIODS[period]?.label ?? period;
 
     return (
         <div className="flex items-center w-full h-11 px-4 border-b border-edge/5 bg-surface-900/30">
 
-            {/* ── LEFT: Symbol + Price ────────────────────────────── */}
+            {/* ── LEFT: Symbol + Price + Change ──────────────────── */}
             <div className="flex items-center gap-3 flex-shrink-0">
                 <div className="flex flex-col leading-none">
-                    <span className="text-sm font-bold text-heading truncate max-w-[120px]">
+                    <span className="text-sm font-semibold text-heading truncate max-w-[120px]">
                         {symbol.replace('.NS', '')}
                     </span>
                     <span className="text-[10px] text-gray-500 mt-0.5">NSE</span>
@@ -55,12 +48,12 @@ function ChartHeader({
 
                 {quote?.price != null && (
                     <div className="flex items-center gap-2">
-                        <span className="text-base font-bold font-mono text-heading tabular-nums">
+                        <span className="text-base font-semibold font-price text-heading tabular-nums">
                             {formatPrice(quote.price)}
                         </span>
                         {quote.change != null && !isMobile && (
                             <span className={cn(
-                                'text-xs font-mono font-semibold whitespace-nowrap',
+                                'text-xs font-price font-medium whitespace-nowrap tabular-nums',
                                 pnlColorClass(quote.change)
                             )}>
                                 {quote.change >= 0 ? '+' : ''}
@@ -88,7 +81,7 @@ function ChartHeader({
                                 : 'bg-surface-800/80 border-edge/20 text-gray-300 hover:text-heading hover:border-edge/40'
                         )}
                     >
-                        <span className="font-mono tabular-nums">{currentLabel}</span>
+                        <span className="font-price tabular-nums">{currentLabel}</span>
                         <svg className={cn('w-3 h-3 transition-transform duration-150', open && 'rotate-180')} viewBox="0 0 20 20" fill="currentColor">
                             <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" />
                         </svg>
@@ -96,7 +89,6 @@ function ChartHeader({
 
                     {open && (
                         <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1.5 z-50 min-w-[160px] rounded-lg border border-edge/10 bg-surface-900/95 backdrop-blur-xl shadow-xl shadow-black/40 py-1.5">
-                            {/* Intraday section */}
                             <p className="px-3 pt-1 pb-1 text-[9px] font-semibold text-gray-500 uppercase tracking-wider">Intraday</p>
                             {INTRADAY.map(([key, { label }]) => (
                                 <button
@@ -118,11 +110,7 @@ function ChartHeader({
                                     )}
                                 </button>
                             ))}
-
-                            {/* Divider */}
                             <div className="h-px bg-edge/10 my-1.5 mx-2" />
-
-                            {/* Daily section */}
                             <p className="px-3 pt-1 pb-1 text-[9px] font-semibold text-gray-500 uppercase tracking-wider">Daily+</p>
                             {DAILY.map(([key, { label }]) => (
                                 <button
@@ -169,25 +157,6 @@ function ChartHeader({
                 )}
             </div>
 
-            {/* Divider */}
-            {!isMobile && <div className="w-px h-5 bg-edge/10 mx-3 flex-shrink-0" />}
-
-            {/* ── RIGHT: Signal badge + Confidence ────────────────── */}
-            {!isMobile && (
-                <div className="flex items-center gap-2.5 flex-shrink-0">
-                    <div className={cn(
-                        'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full',
-                        'border border-edge/10 text-xs font-semibold',
-                        trend.text
-                    )}>
-                        <span className="font-extrabold text-sm leading-none">{trend.icon}</span>
-                        <span className="uppercase">{trendData?.overall || 'NEUTRAL'}</span>
-                    </div>
-                    <span className="text-xs font-mono text-gray-400 tabular-nums">
-                        {trendData?.confidence ?? 0}%
-                    </span>
-                </div>
-            )}
         </div>
     );
 }

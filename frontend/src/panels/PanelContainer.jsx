@@ -142,7 +142,7 @@ function PanelHeader({ title, icon, actions, className, onClose, dragHandleProps
             {...(dragHandleProps || {})}
         >
             {icon && <span className="text-gray-500">{icon}</span>}
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400 flex-1">
+            <h3 className="section-title text-xs flex-1">
                 {title}
             </h3>
             {actions}
