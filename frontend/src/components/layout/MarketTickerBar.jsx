@@ -18,7 +18,7 @@ function TickerItem({ item, onClick, showSeparator }) {
         className={cn(
           "flex items-center gap-2 flex-shrink-0 px-3 py-0.5 rounded transition-colors duration-150",
           isClickable
-            ? "cursor-pointer hover:bg-white/[0.06] active:scale-95 group"
+            ? "cursor-pointer hover:bg-overlay/[0.06] active:scale-95 group"
             : "cursor-default",
         )}
         title={isClickable ? `Open ${item.name} in Terminal` : undefined}
@@ -27,13 +27,13 @@ function TickerItem({ item, onClick, showSeparator }) {
         <span
           className={cn(
             "text-xs font-medium whitespace-nowrap transition-colors",
-            isIndex ? "text-slate-400" : "text-slate-400",
+            isIndex ? "text-gray-500" : "text-gray-500",
             isClickable && "group-hover:text-primary-400",
           )}
         >
           {item.name}
         </span>
-        <span className="text-xs font-price font-medium text-slate-200 tabular-nums">
+        <span className="text-xs font-price font-medium text-heading tabular-nums">
           {formatPrice(item.price, 2)}
         </span>
         <span
@@ -47,7 +47,7 @@ function TickerItem({ item, onClick, showSeparator }) {
       </div>
       {showSeparator && (
         <span
-          className="text-slate-700 mx-3 flex-shrink-0 select-none"
+          className="text-gray-600 mx-3 flex-shrink-0 select-none"
           aria-hidden="true"
         >
           │

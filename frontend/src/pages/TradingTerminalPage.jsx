@@ -58,7 +58,7 @@ function PeriodDropdown({ period, onPeriodChange }) {
                                 'w-full text-left px-3 py-1.5 text-xs font-semibold transition-colors',
                                 period === key
                                     ? 'bg-primary-500/15 text-primary-400'
-                                    : 'text-gray-400 hover:text-gray-200 hover:bg-white/[0.04]'
+                                    : 'text-gray-400 hover:text-gray-200 hover:bg-overlay/[0.04]'
                             )}
                         >
                             {cfg.label}
@@ -106,7 +106,7 @@ function BottomTabs({ holdings, orders }) {
                             </thead>
                             <tbody>
                                 {holdings.map((h, i) => (
-                                    <tr key={h.symbol || i} className="border-t border-edge/[0.03] hover:bg-white/[0.02] transition-colors">
+                                    <tr key={h.symbol || i} className="border-t border-edge/[0.03] hover:bg-overlay/[0.02] transition-colors">
                                         <td className="py-1.5 font-medium text-heading">{h.symbol?.replace('.NS', '')}</td>
                                         <td className="py-1.5 text-right font-price text-gray-300 tabular-nums">{h.quantity}</td>
                                         <td className="py-1.5 text-right font-price text-gray-300 tabular-nums">{formatPrice(h.avg_price)}</td>
@@ -137,7 +137,7 @@ function BottomTabs({ holdings, orders }) {
                             </thead>
                             <tbody>
                                 {orders.map((o, i) => (
-                                    <tr key={o.id || i} className="border-t border-edge/[0.03] hover:bg-white/[0.02] transition-colors">
+                                    <tr key={o.id || i} className="border-t border-edge/[0.03] hover:bg-overlay/[0.02] transition-colors">
                                         <td className="py-1.5 font-medium text-heading">{o.symbol?.replace('.NS', '')}</td>
                                         <td className={cn('py-1.5 font-medium', o.side === 'BUY' ? 'text-bull' : 'text-bear')}>{o.side}</td>
                                         <td className="py-1.5 text-gray-400">{o.order_type}</td>
@@ -370,7 +370,7 @@ export default function TradingTerminalPage() {
             </div>
 
             {/* ── RIGHT: Order panel (full height) ──────────────────────── */}
-            <div className="w-[300px] min-w-[300px] flex-shrink-0 hidden lg:flex flex-col overflow-hidden border-l border-[#1e2128]">
+            <div className="w-[300px] min-w-[300px] flex-shrink-0 hidden lg:flex flex-col overflow-hidden border-l border-edge/10">
                 <OrderPanel
                     symbol={selectedSymbol}
                     currentPrice={quote?.price ?? 0}

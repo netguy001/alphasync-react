@@ -323,7 +323,7 @@ export default function LoginPage() {
         toast("Enter your 2FA code to continue", { icon: "🔒" });
       } else if (result.success) {
         toast.success("Welcome back!");
-        navigate("/dashboard");
+        navigate("/select-mode");
       }
     } catch (err) {
       toast.error(err.response?.data?.detail || "Login failed");

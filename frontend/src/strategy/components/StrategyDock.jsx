@@ -100,8 +100,8 @@ function StrategyRow({ meta, result, enabled, onToggle }) {
         <div className={cn(
             'rounded-xl border transition-all duration-200',
             enabled
-                ? 'border-white/[0.04] bg-white/[0.02] hover:bg-white/[0.035] hover:border-white/[0.07]'
-                : 'border-white/[0.02] bg-transparent opacity-40',
+                ? 'border-edge/[0.04] bg-overlay/[0.02] hover:bg-overlay/[0.035] hover:border-edge/[0.07]'
+                : 'border-edge/[0.02] bg-transparent opacity-40',
         )}>
             {/* Row header */}
             <div className="flex items-center gap-3 px-3.5 py-2.5">

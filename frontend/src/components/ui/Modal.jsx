@@ -90,7 +90,7 @@ export default function Modal({
                         {!hideCloseButton && (
                             <button
                                 onClick={onClose}
-                                className="ml-auto text-gray-400 hover:text-heading transition-colors p-1 rounded hover:bg-white/5"
+                                className="ml-auto text-gray-400 hover:text-heading transition-colors p-1 rounded hover:bg-overlay/5"
                                 aria-label="Close modal"
                             >
                                 ✕

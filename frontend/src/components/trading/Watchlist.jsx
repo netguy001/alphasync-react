@@ -40,7 +40,7 @@ function TabMenu({ wl, anchorRect, onRename, onDelete, onClose, canDelete }) {
         >
             <button
                 onClick={() => { onRename(); onClose(); }}
-                className="w-full flex items-center gap-2.5 px-3 py-2.5 text-xs text-gray-300 hover:bg-white/[0.06] transition-colors text-left"
+                className="w-full flex items-center gap-2.5 px-3 py-2.5 text-xs text-gray-300 hover:bg-overlay/[0.06] transition-colors text-left"
             >
                 <HiPencil className="w-3.5 h-3.5 flex-shrink-0" />
                 Rename

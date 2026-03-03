@@ -116,8 +116,8 @@ function SidebarItem({ to, icon: Icon, label, collapsed }) {
               ? "bg-primary-600/15 text-primary-400 ring-1 ring-primary-500/25"
               : "bg-primary-600/10 text-primary-400 border-l-[3px] border-primary-500 font-medium"
             : collapsed
-              ? "text-gray-400 hover:text-gray-200 hover:bg-white/[0.06]"
-              : "text-gray-400 hover:text-gray-200 hover:bg-white/[0.04] border-l-[3px] border-transparent font-normal",
+              ? "text-gray-400 hover:text-gray-200 hover:bg-overlay/[0.06]"
+              : "text-gray-400 hover:text-gray-200 hover:bg-overlay/[0.04] border-l-[3px] border-transparent font-normal",
         )
       }
     >
@@ -202,7 +202,7 @@ export default function Sidebar({ collapsed, onToggle }) {
           <button
             onClick={onToggle}
             className={cn(
-              "rounded-md text-gray-500 hover:text-gray-300 hover:bg-white/[0.06] transition-all duration-200 flex-shrink-0",
+              "rounded-md text-gray-500 hover:text-gray-300 hover:bg-overlay/[0.06] transition-all duration-200 flex-shrink-0",
               collapsed ? "p-1 mt-0.5" : "p-1.5",
             )}
             title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
@@ -266,7 +266,7 @@ export default function Sidebar({ collapsed, onToggle }) {
                   "flex items-center rounded-lg mb-1 transition-all duration-200",
                   collapsed
                     ? "justify-center py-1.5 mx-auto w-10"
-                    : "gap-2.5 px-3 py-2.5 hover:bg-white/[0.03]",
+                    : "gap-2.5 px-3 py-2.5 hover:bg-overlay/[0.03]",
                 )}
               >
                 <UserAvatar user={user} size={8} />

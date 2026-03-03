@@ -53,7 +53,7 @@ const WatchlistItem = memo(function WatchlistItem({
                 'relative flex items-center justify-between px-3 py-2 cursor-pointer',
                 'border-b border-edge/[0.03]',
                 'transition-colors duration-150',
-                'hover:bg-white/[0.03]',
+                'hover:bg-overlay/[0.03]',
                 isSelected
                     ? 'bg-primary-600/10 border-l-[3px] border-l-primary-500'
                     : 'border-l-[3px] border-l-transparent',

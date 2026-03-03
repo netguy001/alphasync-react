@@ -4,6 +4,7 @@ import { Toaster } from 'react-hot-toast';
 import { ThemeProvider } from './context/ThemeContext';
 import AppShell from './components/layout/AppShell';
 import ProtectedRoute from './components/ProtectedRoute';
+import ForceDarkMode from './components/ForceDarkMode';
 
 // ── Lazy-loaded pages ─────────────────────────────────────────────────────────
 const LandingPage = lazy(() => import('./pages/LandingPage'));
@@ -17,6 +18,8 @@ const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 // ── Lazy-loaded workspaces (new architecture) ─────────────────────────────────
 const DashboardWorkspace = lazy(() => import('./workspaces/DashboardWorkspace'));
 const TradingWorkspace = lazy(() => import('./workspaces/TradingWorkspace'));
+const TradingModeSelectPage = lazy(() => import('./pages/TradingModeSelectPage'));
+const BrokerSelectPage = lazy(() => import('./pages/BrokerSelectPage'));
 
 /** Full-screen spinner shown during lazy chunk loading */
 function PageSkeleton() {
@@ -33,10 +36,18 @@ export default function App() {
             <BrowserRouter>
                 <Suspense fallback={<PageSkeleton />}>
                     <Routes>
-                        {/* ── Public ── */}
-                        <Route path="/" element={<LandingPage />} />
-                        <Route path="/login" element={<LoginPage />} />
-                        <Route path="/register" element={<RegisterPage />} />
+                        {/* ── Public (always dark mode) ── */}
+                        <Route path="/" element={<ForceDarkMode><LandingPage /></ForceDarkMode>} />
+                        <Route path="/login" element={<ForceDarkMode><LoginPage /></ForceDarkMode>} />
+                        <Route path="/register" element={<ForceDarkMode><RegisterPage /></ForceDarkMode>} />
+
+                        {/* ── Protected (mode/broker select — always dark, no AppShell) ── */}
+                        <Route path="/select-mode" element={
+                            <ProtectedRoute><ForceDarkMode><TradingModeSelectPage /></ForceDarkMode></ProtectedRoute>
+                        } />
+                        <Route path="/select-broker" element={
+                            <ProtectedRoute><ForceDarkMode><BrokerSelectPage /></ForceDarkMode></ProtectedRoute>
+                        } />
 
                         {/* ── Protected (inside AppShell) ── */}
                         <Route

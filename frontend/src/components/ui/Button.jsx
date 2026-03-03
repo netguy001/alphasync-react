@@ -6,9 +6,9 @@ const variants = {
     secondary: 'bg-surface-700 hover:bg-surface-700/80 text-heading border border-edge/10 hover:border-edge/20',
     buy: 'bg-buy hover:bg-green-400 text-white shadow-lg shadow-green-500/20',
     sell: 'bg-sell hover:bg-red-400 text-white shadow-lg shadow-red-500/20',
-    ghost: 'text-gray-400 hover:text-heading hover:bg-white/5',
+    ghost: 'text-gray-400 hover:text-heading hover:bg-overlay/5',
     danger: 'bg-red-600 hover:bg-red-500 text-white',
-    outline: 'border border-edge/20 text-heading hover:bg-white/5',
+    outline: 'border border-edge/20 text-heading hover:bg-overlay/5',
 };
 
 const sizes = {

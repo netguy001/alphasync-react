@@ -28,7 +28,7 @@ function OrderHistoryPanel({ orders = [], className }) {
                         </thead>
                         <tbody>
                             {orders.map((o, i) => (
-                                <tr key={o.id || i} className="border-t border-edge/[0.03] hover:bg-white/[0.02] transition-colors">
+                                <tr key={o.id || i} className="border-t border-edge/[0.03] hover:bg-overlay/[0.02] transition-colors">
                                     <td className="px-3 py-1.5 font-semibold text-heading">{o.symbol?.replace('.NS', '')}</td>
                                     <td className={cn('px-3 py-1.5 font-semibold', o.side === 'BUY' ? 'text-bull' : 'text-bear')}>{o.side}</td>
                                     <td className="px-3 py-1.5 text-gray-400">{o.order_type}</td>

@@ -44,7 +44,7 @@ export default function OrderPanel({ symbol, currentPrice = 0, isTerminalFocused
     };
 
     return (
-        <div className="flex flex-col h-full bg-[#111318] border-l border-[#1e2128]">
+        <div className="flex flex-col h-full bg-surface-900 border-l border-edge/10">
             {/* Header */}
             <div className="px-4 py-3 border-b border-edge/5">
                 <h3 className="section-title text-xs mb-3">Order Panel</h3>
@@ -137,7 +137,7 @@ export default function OrderPanel({ symbol, currentPrice = 0, isTerminalFocused
                     <div className="flex items-center border border-edge/10 rounded-lg overflow-hidden bg-surface-800/60">
                         <button
                             onClick={() => setForm((f) => ({ ...f, quantity: Math.max(1, (parseInt(f.quantity) || 1) - 1) }))}
-                            className="px-3 py-2 text-gray-400 hover:text-heading hover:bg-white/5 transition-all text-lg font-bold"
+                            className="px-3 py-2 text-gray-400 hover:text-heading hover:bg-overlay/5 transition-all text-lg font-bold"
                         >
                             −
                         </button>
@@ -150,7 +150,7 @@ export default function OrderPanel({ symbol, currentPrice = 0, isTerminalFocused
                         />
                         <button
                             onClick={() => setForm((f) => ({ ...f, quantity: (parseInt(f.quantity) || 0) + 1 }))}
-                            className="px-3 py-2 text-gray-400 hover:text-heading hover:bg-white/5 transition-all text-lg font-bold"
+                            className="px-3 py-2 text-gray-400 hover:text-heading hover:bg-overlay/5 transition-all text-lg font-bold"
                         >
                             +
                         </button>

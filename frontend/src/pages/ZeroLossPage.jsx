@@ -204,7 +204,7 @@ export default function ZeroLossPage() {
 
                     <button
                         onClick={fetchAll}
-                        className="p-2 rounded-lg border border-edge/10 bg-surface-800/60 text-gray-400 hover:text-white hover:border-edge/20 transition-all"
+                        className="p-2 rounded-lg border border-edge/10 bg-surface-800/60 text-gray-400 hover:text-heading hover:border-edge/20 transition-all"
                         title="Refresh"
                     >
                         <HiRefresh className="w-4 h-4" />
